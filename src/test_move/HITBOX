@@ -1,0 +1,289 @@
+.eqv VGA 0xFF000000    #Primeiro endereço do Bitmap Display
+
+.data
+
+Cabeça: .word 34621, 36861, 12, 7 	#[0]=Aresta Superior esquerda, [2]=Aresta infeiror esquerda , [3]= aresta inferior direita
+Costas: .word 36212, 40372, 9, 13	#[0]=Aresta Superior esquerda, [2]=Aresta infeiror esquerda , [3]= aresta inferior direita
+Frente: .word 36862, 43902, 9, 22	#[0]=Aresta Superior esquerda, [2]=Aresta infeiror esquerda , [3]= aresta inferior direita
+PernaD:	.word 49665, 56705, 12, 22	#[0]=Aresta Superior esquerda, [2]=Aresta infeiror esquerda , [3]= aresta inferior direita
+PernaE: .word 52530, 56690, 10, 13	#[0]=Aresta Superior esquerda, [2]=Aresta infeiror esquerda , [3]= aresta inferior direita
+ADV:	.word 35980, 33, 14
+ADV1:	.byte 85, 62, 0, 0
+SPRITE: .byte 92,49,0,0 		#Altura da imagem, largura da imagem
+BUFFER: .space 5300			#Endereço inicial do buffer
+FILE2: 	.asciiz "parte1.bin"
+string:	.asciiz "Colisao"
+FILE3: .asciiz 	"ryu2.bin"	
+string1: .asciiz "Nao houve colisao"
+.text
+
+	la $t1,0xFF012C00
+	la $s2,0xFF000000
+	la $s1,0x70707070
+LOOPA: 	beq $s2,$t1,FORA101
+	sw $s1,0($s2)
+	addi $s2,$s2,4
+	j LOOPA
+FORA101:	
+	# Abre o arquivo sprite
+		la $a0,FILE2  	#pega o endereço da imagem
+		li $a1,0 	#argumento para syscall
+		li $a2,0 	#argumento para syscall
+		li $v0,13 	#codigo para abrir o arquivo
+		syscall
+
+	# Le o sprite para a memoria BUFFER
+		move $a0,$v0 	#endereço da imagem 
+		la $a1,BUFFER 	#endereço do buffer
+		li $a2,5270 	#tamanho do buffer
+		li $v0,14 	#codigo para ler oq esta no buffer
+		syscall
+
+	#Fecha o arquivo
+		li $v0,16	#Codigo para fechar arquivo	
+		syscall		
+	
+
+		la $a0,SPRITE 	#pega o endereço do Sprite 
+		li $a1,100	#Coordenada x, onde o sprite vai começar a ser printado
+		li $a2,40	#Coordenada y, onde o sprite vai começar a ser printado
+		jal PrintSprite	#Pula para a função que mostra o sprite
+
+	# Abre o arquivo sprite
+		la $a0,FILE3 	#pega o endereço da imagem
+		li $a1,0 	#argumento para syscall
+		li $a2,0 	#argumento para syscall
+		li $v0,13 	#codigo para abrir o arquivo
+		syscall
+
+	# Le o sprite para a memoria BUFFER
+		move $a0,$v0 	#endereço da imagem 
+		la $a1,BUFFER 	#endereço do buffer
+		li $a2,5270 	#tamanho do buffer
+		li $v0,14 	#codigo para ler oq esta no buffer
+		syscall
+
+	#Fecha o arquivo
+		li $v0,16	#Codigo para fechar arquivo	
+		syscall		
+	
+
+		la $a0,ADV1 	#pega o endereço do Sprite 
+		li $a1,100	#Coordenada x, onde o sprite vai começar a ser printado
+		li $a2,140	#Coordenada y, onde o sprite vai começar a ser printado
+		jal PrintSprite	#Pula para a função que mostra o sprite
+		
+		la $t0, Cabeça	
+		li $s4, 0x07
+		lw $s0, 0($t0)
+		lw $s1, 4($t0)
+		lw $s2, 8($t0)
+		lw $s3, 12($t0)
+		
+		lui $t0, 0xFF00
+		or $s0, $t0, $s0
+		
+		move $t7, $zero
+		move $t8, $zero
+		move $t9, $s0
+LoopLinha:	beq  $t8, $s2, LoopColuna
+		sb $s4,($t9)		
+		addi $t9, $t9, 1
+		addi, $t8, $t8, 1
+		j LoopLinha	
+LoopColuna: 	beq $t7, $s3, FORA
+		addi $t9, $s0, 320
+		move $s0, $t9
+		sb $s4, 0($t9)
+		add $t9, $t9, $s2
+		sb $s4, 0($t9)
+		add $t7, $t7, 1
+		j LoopColuna
+
+FORA:
+		
+		la $t0, Costas	
+		li $s4, 0x07
+		lw $s0, 0($t0)
+		lw $s1, 4($t0)
+		lw $s2, 8($t0)
+		lw $s3, 12($t0)
+		
+		lui $t0, 0xFF00
+		or $s0, $t0, $s0
+		
+		move $t7, $zero
+		move $t8, $zero
+		move $t9, $s0
+LoopLinha1:	beq  $t8, $s2, LoopColuna1
+		sb $s4,($t9)		
+		addi $t9, $t9, 1
+		addi, $t8, $t8, 1
+		j LoopLinha1	
+LoopColuna1: 	beq $t7, $s3, FORA1
+		addi $t9, $s0, 320
+		move $s0, $t9
+		sb $s4, 0($t9)
+		add $t9, $t9, $s2
+		sb $s4, 0($t9)
+		add $t7, $t7, 1
+		j LoopColuna1
+FORA1:	
+		la $t0, Frente
+		li $s4, 0x07
+		lw $s0, 0($t0)
+		lw $s1, 4($t0)
+		lw $s2, 8($t0)
+		lw $s3, 12($t0)
+		
+		lui $t0, 0xFF00
+		or $s0, $t0, $s0
+		
+		move $t7, $zero
+		move $t8, $zero
+		move $t9, $s0
+LoopLinha2:	beq  $t8, $s2, LoopColuna2
+		sb $s4,($t9)		
+		addi $t9, $t9, 1
+		addi, $t8, $t8, 1
+		j LoopLinha2	
+LoopColuna2: 	beq $t7, $s3, FORA2
+		addi $t9, $s0, 320
+		move $s0, $t9
+		sb $s4, 0($t9)
+		add $t9, $t9, $s2
+		sb $s4, 0($t9)
+		add $t7, $t7, 1
+		j LoopColuna2
+FORA2:
+		la $t0, PernaD	
+		li $s4, 0x07
+		lw $s0, 0($t0)
+		lw $s1, 4($t0)
+		lw $s2, 8($t0)
+		lw $s3, 12($t0)
+		
+		lui $t0, 0xFF00
+		or $s0, $t0, $s0
+		
+		move $t7, $zero
+		move $t8, $zero
+		move $t9, $s0
+LoopLinha3:	beq  $t8, $s2, LoopColuna3
+		sb $s4,($t9)		
+		addi $t9, $t9, 1
+		addi, $t8, $t8, 1
+		j LoopLinha3	
+LoopColuna3: 	beq $t7, $s3, FORA3
+		addi $t9, $s0, 320
+		move $s0, $t9
+		sb $s4, 0($t9)
+		add $t9, $t9, $s2
+		sb $s4, 0($t9)
+		add $t7, $t7, 1
+		j LoopColuna3
+FORA3:
+
+		la $t0, PernaE	
+		li $s4, 0x07
+		lw $s0, 0($t0)
+		lw $s1, 4($t0)
+		lw $s2, 8($t0)
+		lw $s3, 12($t0)
+		
+		lui $t0, 0xFF00
+		or $s0, $t0, $s0
+		
+		move $t7, $zero
+		move $t8, $zero
+		move $t9, $s0
+LoopLinha4:	beq  $t8, $s2, LoopColuna4
+		sb $s4,($t9)		
+		addi $t9, $t9, 1
+		addi, $t8, $t8, 1
+		j LoopLinha4	
+LoopColuna4: 	beq $t7, $s3, FORA4
+		addi $t9, $s0, 320
+		move $s0, $t9
+		sb $s4, 0($t9)
+		add $t9, $t9, $s2
+		sb $s4, 0($t9)
+		add $t7, $t7, 1
+		j LoopColuna4
+FORA4:		
+		la $t0, ADV	
+		li $s4, 0x36
+		lw $s0, 0($t0)
+		lw $s2, 4($t0)
+		lw $s3, 8($t0)
+		
+		lui $t0, 0xFF00
+		or $s0, $t0, $s0
+		
+		move $t7, $zero
+		move $t8, $zero
+		move $t9, $s0
+LoopLinha10:	beq  $t8, $s2, LoopColuna10
+		li $t0, 0x07
+		lb $t1, 0($t9)
+		beq $t1, $t0, COLISAO
+ahjsah:		sb $s4,($t9)		
+		addi $t9, $t9, 1
+		addi, $t8, $t8, 1
+		j LoopLinha10	
+LoopColuna10: 	beq $t7, $s3, FORA40
+		addi $t9, $s0, 320
+		move $s0, $t9
+		sb $s4, 0($t9)
+		add $t9, $t9, $s2
+		sb $s4, 0($t9)
+		add $t7, $t7, 1
+		j LoopColuna10
+COLISAO:
+	la $a0, string
+	li $v0, 4
+	addi $v1, $zero, 10
+	syscall
+	j ahjsah
+	
+PrintSprite: 
+# imprime o sprite na tela
+	
+	lb $t0,0($a0)		# Quantidade de linhas no sprite, TamX
+	lb $t1,1($a0)		# Quantiadade de colunas no sprite, TamY
+	#la $s2, 0xFFFFFFFF	#Para printar branco na tela
+	addi $a0,$a0,4		#Vai para a proxima word
+	move $t2,$zero		#zerando os registradores, para usa-los com contadores
+	move $t3,$zero
+	
+	li $t5,320		#Numeros de endereços em uma linha no bitmap display
+	mul $t4,$a1,$t5		# 320*x, Calculando a linha inicial que o sprite deverá ser printado
+	add $t4,$t4,$a2		# +y, calculando a coluna inicial que o sprite deverá ser printado
+	la $t6,VGA		#Endereço inicial do bitmap display
+	add $t6,$t6,$t4 	# endereço inicial de impressão do sprite
+	move $t8,$t6		#Armazenando em T8 esse o endereço inial de impressão do sprite
+LOOP1:	beq $t2,$t0,FORA11	#loop para contar quantas linhas ja foram printadas
+LOOP2:	beq $t3,$t1,FORA20	#loop para contar quantas colunas ja foram printadas
+	lb $t7,0($a0)		#lendo o conteudo que esta na memoria buffer
+	#sb $s2,0($t6)		#printando branco, para apagar o sprite anteiror
+	sb $t7,0($t6)		#printando o conteudo lido da memoria buffer, no endereço inicial do sprite  
+	addi $a0,$a0,1		#proximo endereço
+	addi $t6,$t6,1		#proximo endereçe
+	addi $t3,$t3,1		#proximo endereço
+	j LOOP2			#volta para o loop
+FORA20:	addi $t6,$t8,320	#Atualizando o registrador
+	move $t8,$t6		#$t8 agora possui o endereço da proxima linha do bitmap, para continuar a imprimir na tela
+	addi $t2,$t2,1		#Incrementar o contador de linhas
+	move $t3,$zero		#zera o contador de colunas
+	j LOOP1			#volta para o loop que printa as colunas
+FORA11:	jr $ra
+
+FORA40:
+	
+	beq $v1, 10, FIM
+	la $a0, string1
+	li $v0, 4
+	syscall
+FIM:	
+	li $v0, 10
+	syscall 
