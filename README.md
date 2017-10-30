@@ -9,6 +9,9 @@ Projeto final da matéria de Organização e Arquitetura de Computadores (OAC) t
 - Dayanne Fernandes da Cunha
   - E-mail: dayannefernandesc@gmail.com
   - GitHub: [Dayof](https://github.com/Dayof)
+- Lucas Mafra Chagas
+  - E-mail: chagas.lucas.mafra@gmail.com
+  - GitHub: [LMafra](https://github.com/LMafra)
 - X
   - E-mail: X
   - GitHub: [X](https://github.com/)
