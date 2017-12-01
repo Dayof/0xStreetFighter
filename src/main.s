@@ -19,8 +19,8 @@
 # Bitmap Display Settings:				  	#
 #	Unit Width: ?                 			  	#
 #	Unit Height: ?               			  	#
-# 	Display Width: ?                                  	#
-# 	Display Height: ?                                 	#
+# 	Display Width: 320                                  	#
+# 	Display Height: 240                                 	#
 #################################################################
 
 #################### LIBRARIES ################### 
@@ -36,7 +36,7 @@
 .eqv LCD	0xFFFF0130		# LCD address
 
 ### SD AND SRAM INTERFACE ### 
-.eqv SD_DATA_ADDR 0x00413E00		# ARQUIVO.txt sem header.
+.eqv SD_DATA_ADDR 0x00413E00		# ARQUIVO.txt sem header
 					# Addr = Offset, Offset = 0x10E00
 					# [Caso tenha header Addr = Offset + (137 * 512) = Offset + 0x00011200 
 					# (defasagem de setores logicos/fisicos * tamanho do setor)]
@@ -76,41 +76,41 @@
 
 .text
 
+.macro VGA_INIT
+	la	$a1, USER_DATA		# Destiny of the address to read SD card 
+ 	la	$a2, VGA_QTD_BYTE	# Bytes size to read, image size 320*240
+ 	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	
+	la	$t0, VGA_INI_ADDR	# Reset vga and sram addresses
+	la	$t1, USER_DATA		#
+	li	$t3, VGA_QTD_BYTE	#
+.end_macro
+
 INIT:
-	jal 	KEYBOARD
-	jal 	VGA
-	move 	$s3, $zero 		# init stage index count
-	j 	MAIN
+	jal 	KEYBOARD		# Keyboard setup
+	jal 	VGA			# VGA setup
+	j 	MAIN			# Main logic
 
 VGA:
-	la	$a0, SD_DATA_ADDR	# CARREGA O ENDERENCO INICIAL DO SD CARD E PRIMEIRO MAPA
-	la	$a1, USER_DATA		# DESTINO DA LEITURA DO CARTAO
- 	la	$a2, VGA_QTD_BYTE	# TAMANHO DE BYTES LIDOS , BASICAMENTE O TAMANHO DE UMA IMAGEM 320*240
- 	
-	li	$v0, 49			# SYSCALL 49 - LEITURA DO SD CARD 
-	syscall				#################################
+	la	$a0, SD_DATA_ADDR	# Start initial address of SD card with the first stage 
+	VGA_INIT
 	
-	# Usado para verificar os dados lidos usando o In System Memory Content Editor
+	li 	$t5, 12			# Maxinum number of stages
+	li 	$s3, 1			# Init stage index with the first stage
+	li	$t7, 0X004D4000		# Second stage (unique address diff from the main logic)
 	
-	la	$t0, VGA_INI_ADDR	#################################
-	la	$t1, USER_DATA		######### Verifica os dados lidos
-	li	$t3, VGA_QTD_BYTE	#################################
-	
-	li 	$t5, 12			#### Para loop de print dos mapas
-	li 	$t6, 0			#################################
-	
-	addi 	$s3, $s3, 1		# stage index count to 1
-	
-PRINT_VGA:	
-	WRITE_VGA:			
- 		lw	$t2, ($t1)	
-		sw	$t2, ($t0)	
-		addi	$t0, $t0, 4	
-		addi	$t1, $t1, 4	
-		addi 	$t3, $t3, -4	
-					
-	slti 	$t4, $t3, 1		
-	beq 	$t4, $zero, WRITE_VGA	
+PRINT_VGA:				# Loop to print on screen
+	WRITE_VGA:			#
+ 		lw	$t2, ($t1)	#
+		sw	$t2, ($t0)	#
+		addi	$t0, $t0, 4	#
+		addi	$t1, $t1, 4	#
+		addi 	$t3, $t3, -4	#
+					#
+	slti 	$t4, $t3, 1		#
+	beq 	$t4, $zero, WRITE_VGA	#
 	
 	jr 	$ra
 
@@ -136,34 +136,31 @@ MAIN:
 	j 	MAIN
 
 SECOND_STAGE:
-	li 	$t7, 0X004D4000		########### Endereco segundo mapa
-	add	$t8, $zero, $t7		# T9 = ENDERECO DA SEGUNDA IMAGEM DO CARTAO
-	add 	$t8, $t8, 0x00010E00	# ADICIONA A DEFASAGEM FISICA DO CARTAO SD, VARIA DE CARTAO PARA CARTAO
-
+	move	$t8, $t7		# Second map address
+	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
+	
 PRINT_LOGIC:
-	sub 	$t7, $t7, 0x00013000	# ESPACO ENTRE OS ENDERECOS DAS IMAGENS
+	add	$a0, $zero, $t8		# Read the correct address to read the image from SD card 
+	VGA_INIT
 	
-	add	$a0, $zero, $t8		# CARREGA O ENDERENCO CORRETO DO SD PARA LER A IMAGEM ATUAL
-	la	$a1, USER_DATA		# DESTINO DA LEITURA DO CARTAO
- 	la	$a2, VGA_QTD_BYTE	# TAMANHO DE BYTES LIDOS , BASICAMENTE O TAMANHO DE UMA IMAGEM 320*240
- 	
-	li	$v0, 49			# SYSCALL 49 - LEITURA DO SD CARD 
-	syscall				#################################
+	jal 	PRINT_VGA		# Print on VGA
 	
-	la	$t0, VGA_INI_ADDR	#################################
-	la	$t1, USER_DATA		######### Verifica os dados lidos
-	li	$t3, VGA_QTD_BYTE	#################################
+	slt 	$t9, $s3, $t5		# Check if counter is less than the max number of stages
+	beq 	$t9, $zero, EXIT	# If pass due 12 stages then exit the program
 	
-	jal 	PRINT_VGA
-	
-	j	EXIT
+	j MAIN	
 	
 MAPR:
 	addi 	$s3, $s3, 1
 	beq 	$s3, 2, SECOND_STAGE
 	
-	slt 	$t7, $t6, $t5		#################################
-	bne 	$t7, $zero, MAIN	#################################
+
+	sub 	$t7, $t7, 0x00013000	# Gap between the stages 
+	add	$t8, $zero, $t7
+	
+	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
+
+	j PRINT_LOGIC
 
 EXIT:
 	la $s4, 0x0ACEF0DA
