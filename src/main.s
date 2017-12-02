@@ -20,7 +20,20 @@
 #	Unit Width: ?                 			  	#
 #	Unit Height: ?               			  	#
 # 	Display Width: 320                                  	#
-# 	Display Height: 240                                 	#
+# 	Display Height: 240      				#                           	
+#								#
+# Var mapped:							#
+#	s0 : Ps2 Buffer 0					#
+#	s1 : PS2 Key 1						#
+#	s3 : Index counter of stages				#
+#	a0 : SD card data					#
+#	a1 : SD card						#
+#	a2 : Image size						#
+#	t0 : VGA 						#
+#	t1 : SRAM						#
+#	t2-t4 : Loop to print on screen				#
+#	t5 : Number of stages					#
+#	t7 : Addresses calculated from second stage		#
 #################################################################
 
 #################### LIBRARIES ################### 
@@ -61,6 +74,7 @@
 
 ### KEYBOARD MAP ### 
 .eqv LEFT	0x1C000000		# 'a' LEFT
+.eqv LEFT_K	0x10000000		# 'a' KEY
 .eqv DOWN	0x1B000000		# 's' DOWN
 .eqv RIGHT	0x23000000		# 'd' RIGHT
 .eqv UP		0x1D000000		# 'w' UP
@@ -116,15 +130,18 @@ PRINT_VGA:				# Loop to print on screen
 
 KEYBOARD:
 	la 	$s0, 0xFF100100  	# PS2 Keyboard Buffer0
+	la	$s1, 0xFF100520		# PS2 Keyboard Key1 
+	
 	jr 	$ra
 
-MAIN:
-	lw 	$s1,0($s0)		# get key from buffer
+UPDATE_BUFFER:
+	lw 	$s2, 0($s0)		# get key from buffer
 	
-	sll 	$s2, $s1, 24		# shift 24 bits left on the buffer
+	sll 	$s2, $s2, 24		# shift 24 bits left on the buffer
 					# in case the buffer is full
-					
-	beq 	$s2, LEFT, 	EXIT	# test if 'a' was pressed
+
+CONTROL:
+	beq 	$s2, LEFT, 	MAPL	# test if 'a' was pressed
 	beq 	$s2, DOWN, 	EXIT	# test if 's' was pressed
 	beq 	$s2, RIGHT, 	MAPR	# test if 'd' was pressed
 	beq 	$s2, UP, 	EXIT	# test if 'w' was pressed
@@ -133,7 +150,37 @@ MAIN:
 	beq 	$s2, ENTER, 	EXIT	# test if 'o' was pressed
 	beq 	$s2, BACK, 	EXIT	# test if 'p' was pressed
 	
-	j 	MAIN
+MAIN:
+	lw	$s2, 0($s1)			# get keymap 1
+	andi	$t6, $s2, 0xFF100520		# check if 'a' was pressed
+	beq	$t6, LEFT_K, UPDATE_BUFFER	# if 'a' was pressed than get key from buffer
+				
+	j MAIN
+
+MAPR:
+	addi 	$s3, $s3, 1
+	beq 	$s3, 2, SECOND_STAGE
+	
+	sub 	$t7, $t7, 0x00013000	# Gap between the stages 
+	add	$t8, $zero, $t7
+	
+	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
+
+	j PRINT_LOGIC
+
+MAPL:
+	sgt 	$t9, $s3, $zero
+	beq 	$t9, $zero, EXIT
+	
+	addi 	$s3, $s3, -1
+	beq 	$s3, 2, SECOND_STAGE
+	
+	add 	$t7, $t7, 0x00013000	# Gap between the stages 
+	add	$t8, $zero, $t7
+	
+	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
+
+	j PRINT_LOGIC
 
 SECOND_STAGE:
 	move	$t8, $t7		# Second map address
@@ -150,18 +197,6 @@ PRINT_LOGIC:
 	
 	j MAIN	
 	
-MAPR:
-	addi 	$s3, $s3, 1
-	beq 	$s3, 2, SECOND_STAGE
-	
-
-	sub 	$t7, $t7, 0x00013000	# Gap between the stages 
-	add	$t8, $zero, $t7
-	
-	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
-
-	j PRINT_LOGIC
-
 EXIT:
 	la $s4, 0x0ACEF0DA
 	j EXIT
