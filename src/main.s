@@ -22,9 +22,9 @@
 # 	Display Width: 320                                  	#
 # 	Display Height: 240      				#                           	
 #								#
-# Var mapped:							#
+# Registers mapped:						#
 #	s0 : Ps2 Buffer 0					#
-#	s1 : PS2 Key 1						#
+#	s1 : PS2 Key 1, 2, 3 or 4				#
 #	s3 : Index counter of stages				#
 #	a0 : SD card data					#
 #	a1 : SD card						#
@@ -77,6 +77,7 @@
 .eqv LEFT_K	0x10000000		# 'a' KEY
 .eqv DOWN	0x1B000000		# 's' DOWN
 .eqv RIGHT	0x23000000		# 'd' RIGHT
+.eqv RIGHT_K	0x00000008		# 'd' KEY
 .eqv UP		0x1D000000		# 'w' UP
 .eqv L_PUNCH	0x34000000		# 'g' LIGHT PUNCH
 .eqv M_PUNCH	0x33000000		# 'h' MEDIUM PUNCH
@@ -130,7 +131,6 @@ PRINT_VGA:				# Loop to print on screen
 
 KEYBOARD:
 	la 	$s0, 0xFF100100  	# PS2 Keyboard Buffer0
-	la	$s1, 0xFF100520		# PS2 Keyboard Key1 
 	
 	jr 	$ra
 
@@ -151,21 +151,27 @@ CONTROL:
 	beq 	$s2, BACK, 	EXIT	# test if 'p' was pressed
 	
 MAIN:
+	la	$s1, K1				# PS2 Keyboard Key1 
 	lw	$s2, 0($s1)			# get keymap 1
-	andi	$t6, $s2, 0xFF100520		# check if 'a' was pressed
+	andi	$t6, $s2, LEFT_K		# check if 'a' was pressed
 	beq	$t6, LEFT_K, UPDATE_BUFFER	# if 'a' was pressed than get key from buffer
+	
+	la	$s1, K2				# PS2 Keyboard Key2 
+	lw	$s2, 0($s1)			# get keymap 2
+	andi	$t6, $s2, RIGHT_K		# check if 'd' was pressed
+	beq	$t6, RIGHT_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
 				
 	j MAIN
 
 MAPR:
 	addi 	$s3, $s3, 1
-	beq 	$s3, 2, SECOND_STAGE
+	beq 	$s3, 2, SECOND_STAGE_FRONT
 	
 	sub 	$t7, $t7, 0x00013000	# Gap between the stages 
 	add	$t8, $zero, $t7
 	
 	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
-
+	
 	j PRINT_LOGIC
 
 MAPL:
@@ -173,18 +179,23 @@ MAPL:
 	beq 	$t9, $zero, EXIT
 	
 	addi 	$s3, $s3, -1
-	beq 	$s3, 2, SECOND_STAGE
+	beq 	$s3, 1, SECOND_STAGE_BACK
 	
 	add 	$t7, $t7, 0x00013000	# Gap between the stages 
 	add	$t8, $zero, $t7
 	
 	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
-
+	
 	j PRINT_LOGIC
 
-SECOND_STAGE:
-	move	$t8, $t7		# Second map address
+SECOND_STAGE_FRONT:
+	li	$t8, 0X004D4000		# Second map address
 	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
+	
+	j PRINT_LOGIC
+	
+SECOND_STAGE_BACK:
+	li 	$t8, SD_DATA_ADDR
 	
 PRINT_LOGIC:
 	add	$a0, $zero, $t8		# Read the correct address to read the image from SD card 
@@ -193,9 +204,9 @@ PRINT_LOGIC:
 	jal 	PRINT_VGA		# Print on VGA
 	
 	slt 	$t9, $s3, $t5		# Check if counter is less than the max number of stages
-	beq 	$t9, $zero, EXIT	# If pass due 12 stages then exit the program
+	beq 	$t9, $zero, EXIT	# If pass due 12 stages then exit the program	
 	
-	j MAIN	
+	j MAIN
 	
 EXIT:
 	la $s4, 0x0ACEF0DA
