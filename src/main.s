@@ -95,8 +95,8 @@
 
 .text
 
-.macro _VGA_INIT_ (%type, %qtd)
-	la 	$a0, %type		# Type can be stages or characters address
+.macro _VGA_INIT_ (%adr, %qtd)
+	la 	$a0, %adr		# Type can be stages or characters address
 	la	$a1, USER_DATA		# Destiny of the address to read SD card 
  	la	$a2, %qtd		# Bytes size to read
 
@@ -114,15 +114,15 @@ INIT:
 	j 	MAIN			# Main logic
 
 PRINT_RYU:
-	_VGA_INIT_ RYU RYU_QTD 		# Map first Ryu sprite 
-	
 	li 	$s4, 100		# X coordinate
-	li 	$s5, 80		# Y coordinate
+	li 	$s5, 120		# Y coordinate
 		
 	li 	$s6, 92			# Ryu height (y)
 	li 	$s7, 49			# Ryu width (x)
 	
 PRINT_CHAR_VGA:
+	_VGA_INIT_ RYU RYU_QTD 		# Map first Ryu sprite 
+	
 	move 	$t2, $zero		# First counter to print Ryu
 	move 	$t3, $zero		# Second counter to print Ryu
 	li 	$t4, 320		# Size of the screen
@@ -149,7 +149,7 @@ PRINT_CHAR_VGA:
 		add	$t6, $t6, $t0	# Add on VGA's address
 		sb	$t8, 0($t6)
 
-		addi 	$t3, $t3, 1	# segundo contador 
+		addi 	$t3, $t3, 1
 		
 		j 	FOR2
 		
@@ -195,7 +195,7 @@ UPDATE_BUFFER:
 CONTROL:
 	beq 	$s2, LEFT, 	MAPL	# test if 'a' was pressed
 	beq 	$s2, DOWN, 	EXIT	# test if 's' was pressed
-	beq 	$s2, RIGHT, 	MAPR	# test if 'd' was pressed
+	beq 	$s2, RIGHT, 	MOVE_R	# test if 'd' was pressed
 	beq 	$s2, UP, 	EXIT	# test if 'w' was pressed
 	beq 	$s2, L_PUNCH, 	EXIT	# test if 'g' was pressed
 	beq 	$s2, L_KICK, 	EXIT	# test if 'b' was pressed
@@ -214,6 +214,19 @@ MAIN:
 	beq	$t6, RIGHT_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
 				
 	j MAIN
+
+MOVE_R:
+	addi 	$s4, $s4, 20			# Add 20 steps when Ryu move to right
+	
+	addi	$sp, $sp, -4
+	sw	$ra, 0($sp)
+	
+	jal	PRINT_CHAR_VGA
+	
+	lw	$ra, 0($sp)
+	addi	$sp, $sp, 4
+	
+	j	MAIN
 
 MAPR:
 	addi 	$s3, $s3, 1
@@ -250,8 +263,8 @@ SECOND_STAGE_BACK:
 	li 	$t8, SD_DATA_ADDR
 	
 PRINT_LOGIC:
-	add	$a0, $zero, $t8		# Read the correct address to read the image from SD card 
 	_VGA_INIT_ SD_DATA_ADDR VGA_QTD_BYTE
+	add	$a0, $zero, $t8		# Read the correct address to read the image from SD card 
 	
 	jal 	PRINT_VGA		# Print on VGA
 	
