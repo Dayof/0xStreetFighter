@@ -66,7 +66,7 @@
 
 ### CHARACTERS INFORMATION
 .eqv RYU_QTD	  29400			# Ryu's bytes size
-.eqv RYU	  0x502E00		# Ryu's SD address
+.eqv RYU	  0x515E00		# Ryu's SD address
 
 ### PS2 INTERFACE ###  
 .eqv KB1	0xFFFF0100		# PS2 Keyboard Buffer0
@@ -101,7 +101,8 @@
  	la	$a2, %qtd		# Bytes size to read
 
 	li	$v0, 49			# SYSCALL 49 - read from sd card 
-	syscall				#
+	syscall		
+	nop
 	
 	la	$t0, VGA_INI_ADDR	# Reset vga and sram addresses
 	la	$t1, USER_DATA		#
@@ -109,9 +110,13 @@
 
 INIT:
 	jal 	KEYBOARD		# Keyboard setup
+	nop	
 	jal 	VGA			# VGA setup
+	nop	
 	jal	PRINT_RYU
-	j 	MAIN			# Main logic
+	nop	
+	j 	MAIN
+	nop			# Main logic
 
 PRINT_RYU:
 	li 	$s4, 100		# X coordinate
@@ -137,7 +142,7 @@ PRINT_CHAR_VGA:
 		mult 	$t2, $t4
 		mflo	$t6
 		add	$t6, $t6, $t3
-		add	$t6, $t6, $t1	# Add on Ryu's address
+		add	$t6, $t6, $t1	# Add on Ryu's address on SD card
 		lb	$t8, 0($t6)
 		
 		# vga (y + c1)*320 + (x + c2) -> sb
@@ -147,19 +152,23 @@ PRINT_CHAR_VGA:
 		add	$t6, $t6, $s4
 		add	$t6, $t6, $t3
 		add	$t6, $t6, $t0	# Add on VGA's address
+		
 		sb	$t8, 0($t6)
 
 		addi 	$t3, $t3, 1
 		
 		j 	FOR2
+		nop	
 		
 	OUT2:	
 		addi 	$t2, $t2, 1
 		move 	$t3, $zero
 		
 		j 	FOR1
+		nop	
 	OUT1:
 		jr $ra
+		nop	
 	
 VGA:
 	_VGA_INIT_ SD_DATA_ADDR VGA_QTD_BYTE 	# Start initial address of SD card with the first stage 
@@ -180,11 +189,13 @@ PRINT_VGA:				# Loop to print on screen
 	beq 	$t4, $zero, WRITE_VGA	#
 	
 	jr 	$ra
+	nop
 
 KEYBOARD:
 	la 	$s0, 0xFF100100  	# PS2 Keyboard Buffer0
 	
 	jr 	$ra
+	nop
 
 UPDATE_BUFFER:
 	lw 	$s2, 0($s0)		# get key from buffer
@@ -214,78 +225,27 @@ MAIN:
 	beq	$t6, RIGHT_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
 				
 	j MAIN
+	nop
 
 MOVE_R:
 	addi 	$s4, $s4, 20			# Add 20 steps when Ryu move to right
-	
-	addi	$sp, $sp, -4
-	sw	$ra, 0($sp)
-	
+
 	jal	PRINT_CHAR_VGA
-	
-	lw	$ra, 0($sp)
-	addi	$sp, $sp, 4
+	nop	
 	
 	j	MAIN
+	nop
 
 MOVE_L:
 	addi 	$s4, $s4, -20			# Add 20 steps when Ryu move to right
-	
-	addi	$sp, $sp, -4
-	sw	$ra, 0($sp)
-	
+
 	jal	PRINT_CHAR_VGA
-	
-	lw	$ra, 0($sp)
-	addi	$sp, $sp, 4
+	nop	
 	
 	j	MAIN
-	
-MAPR:
-	addi 	$s3, $s3, 1
-	beq 	$s3, 2, SECOND_STAGE_FRONT
-	
-	sub 	$t7, $t7, 0x00013000	# Gap between the stages 
-	add	$t8, $zero, $t7
-	
-	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
-	
-	j PRINT_LOGIC
-
-MAPL:
-	sgt 	$t9, $s3, $zero
-	beq 	$t9, $zero, EXIT
-	
-	addi 	$s3, $s3, -1
-	beq 	$s3, 1, SECOND_STAGE_BACK
-	
-	add 	$t7, $t7, 0x00013000	# Gap between the stages 
-	add	$t8, $zero, $t7
-	
-	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
-	
-	j PRINT_LOGIC
-
-SECOND_STAGE_FRONT:
-	li	$t8, 0X004D4000		# Second map address
-	add 	$t8, $t8, 0x00010E00	# Add physical gap of SD card (it depends from each SD card)
-	
-	j PRINT_LOGIC
-	
-SECOND_STAGE_BACK:
-	li 	$t8, SD_DATA_ADDR
-	
-PRINT_LOGIC:
-	_VGA_INIT_ SD_DATA_ADDR VGA_QTD_BYTE
-	add	$a0, $zero, $t8		# Read the correct address to read the image from SD card 
-	
-	jal 	PRINT_VGA		# Print on VGA
-	
-	slt 	$t9, $s3, $t5		# Check if counter is less than the max number of stages
-	beq 	$t9, $zero, EXIT	# If pass due 12 stages then exit the program	
-	
-	j MAIN
+	nop	
 	
 EXIT:
 	la $s4, 0x0ACEF0DA
 	j EXIT
+	nop
