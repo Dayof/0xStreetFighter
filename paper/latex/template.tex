@@ -1,0 +1,128 @@
+% Sample document for SBGames papers
+% Uses a slightly modified IEEE VGTC template in conference mode
+
+\documentclass{vgtc}                          % final (conference style)
+
+%% These three lines bring in essential packages: ``mathptmx'' for Type 1 
+%% typefaces, ``graphicx'' for inclusion of EPS figures. and ``times''
+%% for proper handling of the times font family.
+
+\usepackage{mathptmx}
+\usepackage{graphicx}
+\usepackage{times}
+\usepackage[brazil,american]{babel}
+\usepackage[utf8]{inputenc}
+
+%% We encourage the use of mathptmx for consistent usage of times font
+%% throughout the proceedings. However, if you encounter conflicts
+%% with other math-related packages, you may want to disable it.
+
+%% If you are submitting a paper to a conference for review with a double
+%% blind reviewing process, please replace the value ``0'' below with your
+%% OnlineID. Otherwise, you may safely leave it at ``0''.
+\onlineid{0}
+
+%% declare the category of your paper, only shown in review mode
+\vgtccategory{Research}
+
+%% Paper title.
+
+\title{Projeto prático usando o microprocessador MIPS no kit de desenvolvimento DE2-70.}
+
+%% Authors are listed in up to three columns as necessary
+%% with a footnote referring to a single e-mail contact.
+%% Affiliations are placed after the authors, one per line
+%% with superscript numbers used to link them to authors
+
+%% Single author:
+%%\author{Single author name\thanks{e-mail: email@somewhere.com}}
+%%\affiliation{\scriptsize University A}
+
+%% Multiple authors with single affiliation:
+%%\author{First author\thanks{e-mail: email@somewhere.com} %
+%%\and Second author %
+%%\and Third author}
+%%\affiliation{\scriptsize Research institute X}
+
+%% Multiple authors with multiple affiliations:
+
+	
+\author{Dayanne Fernandes da Cunha, 13/0107191$^{1}$ \thanks{e-mail: dayannefernandesc@gmail.com}%
+\and Diego Vaz Fernandes, 16/0117925$^{1}$\thanks{e-mail: @gmail.com}%
+\and Lucas Junior Ribas, 16/0052289$^{1}$\thanks{e-mail: ribas858@gmail.com@gmail.com}
+\and Lucas Mafra Chagas, 12/0126443$^{1}$\thanks{e-mail: chagas.lucas.mafra@gmail.com}
+\and Marcelo Giordano Martins Costa de Oliveira, 12/0037301$^{1}$\thanks{e-mail: marcelo.giordano@gmail.com}}
+\affiliation{\scriptsize $^{1}$Universidade de Brasília, Departamento de Ciência da Computação, Brasil}
+
+%% A teaser figure can be included as follows:
+\teaser{
+  \includegraphics[width=2in]{street-fighter.jpg}
+  \caption{Projeto prático Street Figther 2.}
+}
+
+%% Abstract section.
+%% Note how the keywords must be also included in this section!
+\abstract{ O objetivo desse projeto é construir o jogo Street Fighter 2 utilizando um microprocessador MIPS no kit de desenvolvimento DE2-70, aplicando os conhecimentos adquiridos durante a disciplina. O processador escolhido foi o MIPS Pipeline, e foi utilizado o cartão SD para armazenar as sprites do jogo.
+
+\smallskip
+
+\noindent \textbf{Keywords:} Street Fighter 2, Microprocessador MIPS, MIPS Pipeline, DE2-70, Cartão SD.
+} % end of abstract
+
+%% Copyright space is enabled by default as required by guidelines.
+%% It is disabled by the 'review' option or via the following command:
+% \nocopyrightspace
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%% START OF THE PAPER %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%% The ``\maketitle'' command must be the first command after the
+%% ``\begin{document}'' command. It prepares and prints the title block.
+
+%% the only exception to this rule is the \firstsection command
+\firstsection{Introdução}
+
+
+
+
+
+
+\maketitle
+
+%% do not uncomment this; use the \firstsection above
+%%\section{Introduction} 
+
+Como forma de avaliação na matéria Organização e Arquitetura de Computadores, o professor doutor Marcus Vinicius Lamar propós aos seus alunos o desenvolvimento do jogo mundialmente conhecido Street Fighter 2. Street Fighter 2 é um jogo de luta 2D criado em 1991 pela empresa japonesa Capcom.\\ 
+
+Para o desenvolvimento do projeto, os alunos precisariam cumprir alguns critérios para conseguir a nota máxima. Eles foram divididos em duas categorias, Requerimentos de Hardware e Requerimentos de Software. Para os Requerimentos de Hardware, os estudantes precisavam usar o processador MIPS Pipeline, apresentar o uso adequado do teclado, apresentar efeitos sonoros e música, além de usar o cartão SD para o armazenamento de dados. \\
+
+Quanto aos Requerimentos de Software, o grupo precisava implementar um jogo plenamente funcional, com menu, apresentação e todos os outros detalhes que o jogo possui. A equipe precisava apresentar dois modos de jogo: Arcade, onde o jogador joga contra o computador escolhendo o seu nível e evoluindo de fase, e Versus, onde há a presença de dois jogadores, ambos com três rounds. Além disso, era preciso mostrar os doze personagens presentes dentro do jogo, com suas respectivas arenas e golpes especiais. 
+
+
+\section{Fundamentação Teórica}
+
+Para cumprir os Requerimentos de Hardware, as equipes precisavam ter o conhecimento sobre MIPS Pipeline,  
+
+\section{Fundamentação Técnica}
+
+
+
+
+\section{Metodologia}
+
+
+\section{Resultados Obtidos}
+
+
+
+\section{Conclusão}
+
+
+\section{Trabalhos Futuros}
+
+\bibliographystyle{abbrv}
+\bibliography{template}
+\end{document}
