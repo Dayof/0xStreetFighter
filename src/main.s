@@ -23,54 +23,13 @@
 # 	Display Height: 240      				#                           	
 #								#
 # Registers mapped:						#
-#	s0 : Ps2 Buffer 0					#
-#	s1 : PS2 Key 1, 2, 3 or 4				#
-#	s3 : Index counter of stages				#
-#	a0 : SD card data					#
-#	a1 : SD card						#
-#	a2 : Image size						#
-#	t0 : VGA 						#
-#	t1 : SRAM						#
-#	t2-t4 : Loop to print on screen				#
-#	t5 : Number of stages					#
-#	t7 : Addresses calculated from second stage		#
+#	0($sp) : Ryu X Coordinate				#
+#	4($sp) : Ryu Y Coordinate				#
 #################################################################
 
-#################### LIBRARIES ################### 
-#.include "vga.s"
-
 #################### MARS INTERFACE ADDRESSES ################### 
-# KEYBOARD AND DISPLAY MMIO SIMULATOR
-.eqv READ_M	0xFF100004		# Address to get char typed from keyboard
-.eqv PRINT_M	0xFF10000C		# Address to display char typed from keyboard
-
-#################### FPGA INTERFACE ADDRESSES ################### 
-### LCD INTERFACE ### 
-.eqv LCD	0xFFFF0130		# LCD address
-
-### SD AND SRAM INTERFACE ### 
-.eqv SD_DATA_ADDR 0x413E00		# ARQUIVO.txt sem header
-					# Addr = Offset, Offset = 0x10E00
-					# [Caso tenha header Addr = Offset + (137 * 512) = Offset + 0x00011200 
-					# (defasagem de setores logicos/fisicos * tamanho do setor)]
-					# Olhe pelo WinHex o offset do seu cartao SD
-					
-.eqv USER_DATA    0x10012000		# Endereco da SRAM
-					
-### VGA INTERFACE ### 
-.eqv VGA_INI_ADDR 0xFF000000		# FF000000 - C0   
-					# Endereco inicial da VGA, mas existe um BUG, 
-					# que pode ser concertado ao subtrair um offest no endereco da VGA
-					
-.eqv VGA_QTD_BYTE 76800			# VGA Bytes
-
-### CHARACTERS INFORMATION
-.eqv RYU_QTD	  29400			# Ryu's bytes size
-.eqv RYU	  0x515E00		# Ryu's SD address
-
 ### PS2 INTERFACE ###  
-.eqv KB1	0xFFFF0100		# PS2 Keyboard Buffer0
-.eqv KB2	0xFFFF0104		# PS2 Keyboard Buffer1
+.eqv KB1	0xFF100100		# PS2 Keyboard Buffer0
 .eqv K1		0xFF100520		# PS2 Keyboard KEY0
 .eqv K2		0xFF100524		# PS2 Keyboard KEY1
 .eqv K3		0xFF100528		# PS2 Keyboard KEY2
@@ -93,67 +52,90 @@
 .eqv ENTER	0x44000000		# 'o' ENTER
 .eqv BACK	0x4D000000		# 'p' BACK
 
+### VGA MAP ### 
+.eqv VGA_INI_ADDR 0xFF000000		# VGA initial address
+.eqv VGA_QTD_BYTE 76800			# Maximum size of the screen
+
+### SD AND SRAM MAP ### 
+.eqv SD_DATA_ADDR 0x413E00		# ARQUIVO.txt sem header
+					# Addr = Offset, Offset = 0x10E00
+					# [Caso tenha header Addr = Offset + (137 * 512) = Offset + 0x00011200 
+					# (defasagem de setores logicos/fisicos * tamanho do setor)]
+					# Olhe pelo WinHex o offset do seu cartao SD
+					
+.eqv USER_DATA    0x10012000		# SRAM address
+
+### CHARACTERS MAP ### 
+.eqv RYU	  0x515E00		# Ryu's SD address
+.eqv RYU_QTD	  29400			# Ryu's bytes size
+
 .text
 
-.macro _VGA_INIT_ (%adr, %qtd)
-	la 	$a0, %adr		# Type can be stages or characters address
-	la	$a1, USER_DATA		# Destiny of the address to read SD card 
- 	la	$a2, %qtd		# Bytes size to read
-
-	li	$v0, 49			# SYSCALL 49 - read from sd card 
-	syscall		
-	nop
-	
-	la	$t0, VGA_INI_ADDR	# Reset vga and sram addresses
-	la	$t1, USER_DATA		#
-.end_macro
-
 INIT:
-	jal 	KEYBOARD		# Keyboard setup
-	nop	
+	addi	$sp, $sp, -20 		# Init stack
+	
 	jal 	VGA			# VGA setup
 	nop	
-	jal	PRINT_RYU
+	
+	jal	SETUP_CHAR		# Print Ryu
 	nop	
-	j 	MAIN
-	nop			# Main logic
+	
+	j 	MAIN			# Main logic
+	nop		
+	
+	j 	EXIT
+	nop
 
-PRINT_RYU:
-	li 	$s4, 100		# X coordinate
-	li 	$s5, 120		# Y coordinate
-		
-	li 	$s6, 92			# Ryu height (y)
-	li 	$s7, 49			# Ryu width (x)
+SETUP_CHAR:	
+	li 	$t0, 100		# X coordinate
+	sw	$t0, 0($sp)		#
+	li 	$t1, 120		# Y coordinate
+	sw	$t1, 4($sp)		#
 	
 PRINT_CHAR_VGA:
-	_VGA_INIT_ RYU RYU_QTD 		# Map first Ryu sprite 
+	la	$a0, RYU
+	la	$a1, USER_DATA		# SRAM address
+	li	$a2, RYU_QTD
 	
-	move 	$t2, $zero		# First counter to print Ryu
-	move 	$t3, $zero		# Second counter to print Ryu
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+	
+	la	$t0, VGA_INI_ADDR	# VGA initial address
+	la	$t1, USER_DATA		# SRAM address
+	
+	move 	$t2, $zero		# First counter (c1) to print char
+	move 	$t3, $zero		# Second counter (c2) to print char
 	li 	$t4, 320		# Size of the screen
 	
+	lw	$s5, 0($sp)		# X coordinate
+	lw	$s6, 4($sp)		# Y coordinate
+	
+	li 	$t5, 92			# Ryu height (y)
+	li 	$t6, 49			# Ryu width (x)
+	
 	FOR1:	
-		beq 	$t2, $s6, OUT1	# If all the lines was print then exit ryu print (92)
+		beq 	$t2, $t5, OUT1	# If all the lines was print then exit ryu print (92)
 
 	FOR2:	
-		beq 	$t3, $s7, OUT2	# If all the columns was print then continue the outer loop (49)
+		beq 	$t3, $t6, OUT2	# If all the columns was print then continue the outer loop (49)
 		
 		# sd (c1 * 320) + c2 -> lb
-		mult 	$t2, $t4
-		mflo	$t6
-		add	$t6, $t6, $t3
-		add	$t6, $t6, $t1	# Add on Ryu's address on SD card
-		lb	$t8, 0($t6)
+		mult 	$t2, $t4	# (c1 * 320)
+		mflo	$t9		#
+		add	$s0, $t9, $t3	# (c1 * 320) + c2
+		add	$s1, $s0, $t1	# Add on Ryu's address on SD card
+		lb	$s2, 0($s1)
 		
 		# vga (y + c1)*320 + (x + c2) -> sb
-		add	$t6, $s5, $t2
-		mult	$t6, $t4
-		mflo	$t6
-		add	$t6, $t6, $s4
-		add	$t6, $t6, $t3
-		add	$t6, $t6, $t0	# Add on VGA's address
+		add	$t9, $s6, $t2	# y + c1
+		mult	$t9, $t4	# (y + c1)*320
+		mflo	$s0		#
+		add	$s1, $s0, $s5	# (y + c1)*320 + x
+		add	$s3, $s1, $t3	# (y + c1)*320 + (x + c2)
+		add	$s4, $s3, $t0	# Add on VGA's address
 		
-		sb	$t8, 0($t6)
+		sb	$s2, 0($s4)
 
 		addi 	$t3, $t3, 1
 		
@@ -166,16 +148,21 @@ PRINT_CHAR_VGA:
 		
 		j 	FOR1
 		nop	
-	OUT1:
-		jr $ra
-		nop	
+	OUT1:	
+		jr	$ra
+		nop
+
+VGA:		 
+	la	$a0, SD_DATA_ADDR	# Stages address
+	la	$a1, USER_DATA		# Destiny of the address to read SD card 
+	li	$a2, VGA_QTD_BYTE	# Bytes size to read
 	
-VGA:
-	_VGA_INIT_ SD_DATA_ADDR VGA_QTD_BYTE 	# Start initial address of SD card with the first stage 
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
 	
-	li 	$t5, 12				# Maxinum number of stages
-	li 	$s3, 1				# Init stage index with the first stage
-	li	$t7, 0x4D4000			# Second stage (unique address diff from the main logic)
+	la	$t0, VGA_INI_ADDR	# Reset vga and sram addresses
+	la	$t1, USER_DATA		#
 	
 PRINT_VGA:				# Loop to print on screen
 	WRITE_VGA:			#
@@ -187,48 +174,48 @@ PRINT_VGA:				# Loop to print on screen
 					#
 	slti 	$t4, $a2, 1		#
 	beq 	$t4, $zero, WRITE_VGA	#
-	
-	jr 	$ra
-	nop
 
-KEYBOARD:
-	la 	$s0, 0xFF100100  	# PS2 Keyboard Buffer0
-	
-	jr 	$ra
+	jr	$ra
 	nop
 
 UPDATE_BUFFER:
-	lw 	$s2, 0($s0)		# get key from buffer
+	la 	$t0, KB1		# get key from buffer
+	lw	$t1, 0($t0)		#
 	
-	sll 	$s2, $s2, 24		# shift 24 bits left on the buffer
+	sll 	$a0, $t1, 24		# shift 24 bits left on the buffer
 					# in case the buffer is full
 
 CONTROL:
-	beq 	$s2, LEFT, 	MOVE_L	# test if 'a' was pressed
-	beq 	$s2, DOWN, 	EXIT	# test if 's' was pressed
-	beq 	$s2, RIGHT, 	MOVE_R	# test if 'd' was pressed
-	beq 	$s2, UP, 	EXIT	# test if 'w' was pressed
-	beq 	$s2, L_PUNCH, 	EXIT	# test if 'g' was pressed
-	beq 	$s2, L_KICK, 	EXIT	# test if 'b' was pressed
-	beq 	$s2, ENTER, 	EXIT	# test if 'o' was pressed
-	beq 	$s2, BACK, 	EXIT	# test if 'p' was pressed
+	beq 	$a0, LEFT, 	MOVE_L	# test if 'a' was pressed
+	beq 	$a0, DOWN, 	EXIT	# test if 's' was pressed
+	beq 	$a0, RIGHT, 	MOVE_R	# test if 'd' was pressed
+	beq 	$a0, UP, 	EXIT	# test if 'w' was pressed
+	beq 	$a0, L_PUNCH, 	EXIT	# test if 'g' was pressed
+	beq 	$a0, L_KICK, 	EXIT	# test if 'b' was pressed
+	beq 	$a0, ENTER, 	EXIT	# test if 'o' was pressed
+	beq 	$a0, BACK, 	EXIT	# test if 'p' was pressed
 	
 MAIN:
-	la	$s1, K1				# PS2 Keyboard Key1 
-	lw	$s2, 0($s1)			# get keymap 1
-	andi	$t6, $s2, LEFT_K		# check if 'a' was pressed
-	beq	$t6, LEFT_K, UPDATE_BUFFER	# if 'a' was pressed than get key from buffer
+	la	$t0, K1				# PS2 Keyboard Key1 
+	lw	$t1, 0($t0)			# get keymap 1
+	andi	$t2, $t1, LEFT_K		# check if 'a' was pressed
+	beq	$t2, LEFT_K, UPDATE_BUFFER	# if 'a' was pressed than get key from buffer
 	
-	la	$s1, K2				# PS2 Keyboard Key2 
-	lw	$s2, 0($s1)			# get keymap 2
-	andi	$t6, $s2, RIGHT_K		# check if 'd' was pressed
-	beq	$t6, RIGHT_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
+	la	$t0, K2				# PS2 Keyboard Key2 
+	lw	$t1, 0($t0)			# get keymap 2
+	andi	$t2, $t1, RIGHT_K		# check if 'd' was pressed
+	beq	$t2, RIGHT_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
 				
 	j MAIN
 	nop
 
 MOVE_R:
-	addi 	$s4, $s4, 20			# Add 20 steps when Ryu move to right
+	jal	VGA
+	nop
+	
+	lw	$t0, 0($sp)		# X coordinate
+	addi 	$t1, $t0, 20		# Add 20 steps when Ryu move to right
+	sw	$t1, 0($sp)		# X updated
 
 	jal	PRINT_CHAR_VGA
 	nop	
@@ -237,7 +224,12 @@ MOVE_R:
 	nop
 
 MOVE_L:
-	addi 	$s4, $s4, -20			# Add 20 steps when Ryu move to right
+	jal	VGA
+	nop
+	
+	lw	$t0, 0($sp)		# X coordinate
+	addi 	$t1, $t0, -20		# Sub 20 steps when Ryu move to left
+	sw	$t1, 0($sp)		# X updated
 
 	jal	PRINT_CHAR_VGA
 	nop	
