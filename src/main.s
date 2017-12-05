@@ -94,7 +94,6 @@ SETUP_CHAR:
 	li 	$t1, 120		# Y coordinate
 	sw	$t1, 4($sp)		#
 	
-PRINT_CHAR_VGA:
 	la	$a0, RYU
 	la	$a1, USER_DATA		# SRAM address
 	li	$a2, RYU_QTD
@@ -103,6 +102,7 @@ PRINT_CHAR_VGA:
 	syscall				#
 	nop
 	
+PRINT_CHAR_VGA:
 	la	$t0, VGA_INI_ADDR	# VGA initial address
 	la	$t1, USER_DATA		# SRAM address to collect char
 	la	$s7, CHAR_BUFFER	# SRAM address to collet buffer
