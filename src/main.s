@@ -193,7 +193,7 @@ UPDATE_BUFFER:
 					# in case the buffer is full
 
 CONTROL:
-	beq 	$s2, LEFT, 	MAPL	# test if 'a' was pressed
+	beq 	$s2, LEFT, 	MOVE_L	# test if 'a' was pressed
 	beq 	$s2, DOWN, 	EXIT	# test if 's' was pressed
 	beq 	$s2, RIGHT, 	MOVE_R	# test if 'd' was pressed
 	beq 	$s2, UP, 	EXIT	# test if 'w' was pressed
@@ -228,6 +228,19 @@ MOVE_R:
 	
 	j	MAIN
 
+MOVE_L:
+	addi 	$s4, $s4, -20			# Add 20 steps when Ryu move to right
+	
+	addi	$sp, $sp, -4
+	sw	$ra, 0($sp)
+	
+	jal	PRINT_CHAR_VGA
+	
+	lw	$ra, 0($sp)
+	addi	$sp, $sp, 4
+	
+	j	MAIN
+	
 MAPR:
 	addi 	$s3, $s3, 1
 	beq 	$s3, 2, SECOND_STAGE_FRONT
