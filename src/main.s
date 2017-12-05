@@ -17,8 +17,8 @@
 #	Keyboard and Display MMIO Simulator     		#
 #                                               		#
 # Bitmap Display Settings:				  	#
-#	Unit Width: ?                 			  	#
-#	Unit Height: ?               			  	#
+#	Unit Width: 1 byte                		 	#
+#	Unit Height: 1 byte          			  	#
 # 	Display Width: 320                                  	#
 # 	Display Height: 240      				#                           	
 #								#
@@ -49,7 +49,7 @@
 .eqv LCD	0xFFFF0130		# LCD address
 
 ### SD AND SRAM INTERFACE ### 
-.eqv SD_DATA_ADDR 0x00413E00		# ARQUIVO.txt sem header
+.eqv SD_DATA_ADDR 0x413E00		# ARQUIVO.txt sem header
 					# Addr = Offset, Offset = 0x10E00
 					# [Caso tenha header Addr = Offset + (137 * 512) = Offset + 0x00011200 
 					# (defasagem de setores logicos/fisicos * tamanho do setor)]
@@ -63,6 +63,10 @@
 					# que pode ser concertado ao subtrair um offest no endereco da VGA
 					
 .eqv VGA_QTD_BYTE 76800			# VGA Bytes
+
+### CHARACTERS INFORMATION
+.eqv RYU_QTD	  29400			# Ryu's bytes size
+.eqv RYU	  0x502E00		# Ryu's SD address
 
 ### PS2 INTERFACE ###  
 .eqv KB1	0xFFFF0100		# PS2 Keyboard Buffer0
@@ -91,30 +95,78 @@
 
 .text
 
-.macro VGA_INIT
+.macro _VGA_INIT_ (%type, %qtd)
+	la 	$a0, %type		# Type can be stages or characters address
 	la	$a1, USER_DATA		# Destiny of the address to read SD card 
- 	la	$a2, VGA_QTD_BYTE	# Bytes size to read, image size 320*240
- 	
+ 	la	$a2, %qtd		# Bytes size to read
+
 	li	$v0, 49			# SYSCALL 49 - read from sd card 
 	syscall				#
 	
 	la	$t0, VGA_INI_ADDR	# Reset vga and sram addresses
 	la	$t1, USER_DATA		#
-	li	$t3, VGA_QTD_BYTE	#
 .end_macro
 
 INIT:
 	jal 	KEYBOARD		# Keyboard setup
 	jal 	VGA			# VGA setup
+	jal	PRINT_RYU
 	j 	MAIN			# Main logic
 
-VGA:
-	la	$a0, SD_DATA_ADDR	# Start initial address of SD card with the first stage 
-	VGA_INIT
+PRINT_RYU:
+	_VGA_INIT_ RYU RYU_QTD 		# Map first Ryu sprite 
 	
-	li 	$t5, 12			# Maxinum number of stages
-	li 	$s3, 1			# Init stage index with the first stage
-	li	$t7, 0X004D4000		# Second stage (unique address diff from the main logic)
+	li 	$s4, 100		# X coordinate
+	li 	$s5, 80		# Y coordinate
+		
+	li 	$s6, 92			# Ryu height (y)
+	li 	$s7, 49			# Ryu width (x)
+	
+PRINT_CHAR_VGA:
+	move 	$t2, $zero		# First counter to print Ryu
+	move 	$t3, $zero		# Second counter to print Ryu
+	li 	$t4, 320		# Size of the screen
+	
+	FOR1:	
+		beq 	$t2, $s6, OUT1	# If all the lines was print then exit ryu print (92)
+
+	FOR2:	
+		beq 	$t3, $s7, OUT2	# If all the columns was print then continue the outer loop (49)
+		
+		# sd (c1 * 320) + c2 -> lb
+		mult 	$t2, $t4
+		mflo	$t6
+		add	$t6, $t6, $t3
+		add	$t6, $t6, $t1	# Add on Ryu's address
+		lb	$t8, 0($t6)
+		
+		# vga (y + c1)*320 + (x + c2) -> sb
+		add	$t6, $s5, $t2
+		mult	$t6, $t4
+		mflo	$t6
+		add	$t6, $t6, $s4
+		add	$t6, $t6, $t3
+		add	$t6, $t6, $t0	# Add on VGA's address
+		sb	$t8, 0($t6)
+
+		addi 	$t3, $t3, 1	# segundo contador 
+		
+		j 	FOR2
+		
+	OUT2:	
+		addi 	$t2, $t2, 1
+		move 	$t3, $zero
+		
+		j 	FOR1
+	OUT1:
+		jr $ra
+	
+VGA:
+	_VGA_INIT_ SD_DATA_ADDR VGA_QTD_BYTE 	# Start initial address of SD card with the first stage 
+	
+	li 	$t5, 12				# Maxinum number of stages
+	li 	$s3, 1				# Init stage index with the first stage
+	li	$t7, 0x4D4000			# Second stage (unique address diff from the main logic)
 	
 PRINT_VGA:				# Loop to print on screen
 	WRITE_VGA:			#
@@ -122,9 +174,9 @@ PRINT_VGA:				# Loop to print on screen
 		sw	$t2, ($t0)	#
 		addi	$t0, $t0, 4	#
 		addi	$t1, $t1, 4	#
-		addi 	$t3, $t3, -4	#
+		addi 	$a2, $a2, -4	#
 					#
-	slti 	$t4, $t3, 1		#
+	slti 	$t4, $a2, 1		#
 	beq 	$t4, $zero, WRITE_VGA	#
 	
 	jr 	$ra
@@ -199,7 +251,7 @@ SECOND_STAGE_BACK:
 	
 PRINT_LOGIC:
 	add	$a0, $zero, $t8		# Read the correct address to read the image from SD card 
-	VGA_INIT
+	_VGA_INIT_ SD_DATA_ADDR VGA_QTD_BYTE
 	
 	jal 	PRINT_VGA		# Print on VGA
 	
