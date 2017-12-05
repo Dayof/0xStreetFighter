@@ -63,7 +63,8 @@
 					# (defasagem de setores logicos/fisicos * tamanho do setor)]
 					# Olhe pelo WinHex o offset do seu cartao SD
 					
-.eqv USER_DATA    0x10012000		# SRAM address
+.eqv USER_DATA    0x10012000		# SRAM address to load char from SD 
+.eqv CHAR_BUFFER  0x1003B400		# SRAM address to keep the char's buffer
 
 ### CHARACTERS MAP ### 
 .eqv RYU	  0x515E00		# Ryu's SD address
@@ -86,6 +87,7 @@ INIT:
 	j 	EXIT
 	nop
 
+
 SETUP_CHAR:	
 	li 	$t0, 100		# X coordinate
 	sw	$t0, 0($sp)		#
@@ -102,7 +104,9 @@ PRINT_CHAR_VGA:
 	nop
 	
 	la	$t0, VGA_INI_ADDR	# VGA initial address
-	la	$t1, USER_DATA		# SRAM address
+	la	$t1, USER_DATA		# SRAM address to collect char
+	la	$s7, CHAR_BUFFER	# SRAM address to collet buffer
+	sw	$s7, 8($sp)		#
 	
 	move 	$t2, $zero		# First counter (c1) to print char
 	move 	$t3, $zero		# Second counter (c2) to print char
@@ -124,18 +128,23 @@ PRINT_CHAR_VGA:
 		mult 	$t2, $t4	# (c1 * 320)
 		mflo	$t9		#
 		add	$s0, $t9, $t3	# (c1 * 320) + c2
-		add	$s1, $s0, $t1	# Add on Ryu's address on SD card
+		add	$s1, $s0, $t1	# Add on Ryu's address on SSRAM
 		lb	$s2, 0($s1)
 		
 		# vga (y + c1)*320 + (x + c2) -> sb
 		add	$t9, $s6, $t2	# y + c1
 		mult	$t9, $t4	# (y + c1)*320
-		mflo	$s0		#
-		add	$s1, $s0, $s5	# (y + c1)*320 + x
+		mflo	$s1		#
+		add	$s1, $s1, $s5	# (y + c1)*320 + x
 		add	$s3, $s1, $t3	# (y + c1)*320 + (x + c2)
 		add	$s4, $s3, $t0	# Add on VGA's address
 		
-		sb	$s2, 0($s4)
+		lb	$t7, 0($s4)	# Collect buffer behind character
+		
+		sb	$s2, 0($s4)	# Print char on VGA
+		
+		sb	$t7, 0($s7)	# Save buffer on SRAM
+		add	$s7, $s7, 1 	# Increase SRAM's index
 
 		addi 	$t3, $t3, 1
 		
@@ -210,7 +219,7 @@ MAIN:
 	nop
 
 MOVE_R:
-	jal	VGA
+	jal	CLEAN_PATH_VGA
 	nop
 	
 	lw	$t0, 0($sp)		# X coordinate
@@ -224,7 +233,7 @@ MOVE_R:
 	nop
 
 MOVE_L:
-	jal	VGA
+	jal	CLEAN_PATH_VGA
 	nop
 	
 	lw	$t0, 0($sp)		# X coordinate
@@ -235,7 +244,59 @@ MOVE_L:
 	nop	
 	
 	j	MAIN
-	nop	
+	nop
+	
+CLEAN_PATH_VGA:
+	la	$t0, VGA_INI_ADDR	# VGA initial address
+	la	$t1, CHAR_BUFFER	# SRAM address
+	
+	move 	$t2, $zero		# First counter (c1) to print char
+	move 	$t3, $zero		# Second counter (c2) to print char
+	li 	$t4, 320		# Size of the screen
+	
+	lw	$s5, 0($sp)		# X coordinate
+	lw	$s6, 4($sp)		# Y coordinate
+	
+	li 	$t5, 92			# Ryu height (y)
+	li 	$t6, 49			# Ryu width (x)
+	
+	FOR11:	
+		beq 	$t2, $t5, OUT11	# If all the lines was print then exit ryu print (92)
+
+	FOR22:	
+		beq 	$t3, $t6, OUT22	# If all the columns was print then continue the outer loop (49)
+		
+		# sd (c1 * 49) + c2 -> lb
+		mult 	$t2, $t6	# (c1 * 49)
+		mflo	$t9		#
+		add	$s0, $t9, $t3	# (c1 * 49) + c2
+		add	$s1, $s0, $t1	# Add on Ryu's address on SD card
+		lb	$s2, 0($s1)
+		
+		# vga (y + c1)*320 + (x + c2) -> sb
+		add	$t9, $s6, $t2	# y + c1
+		mult	$t9, $t4	# (y + c1)*320
+		mflo	$s0		#
+		add	$s1, $s0, $s5	# (y + c1)*320 + x
+		add	$s3, $s1, $t3	# (y + c1)*320 + (x + c2)
+		add	$s4, $s3, $t0	# Add on VGA's address
+		
+		sb	$s2, 0($s4)
+
+		addi 	$t3, $t3, 1
+		
+		j 	FOR22
+		nop	
+		
+	OUT22:	
+		addi 	$t2, $t2, 1
+		move 	$t3, $zero
+		
+		j 	FOR11
+		nop	
+	OUT11:	
+		jr	$ra
+		nop	
 	
 EXIT:
 	la $s4, 0x0ACEF0DA
