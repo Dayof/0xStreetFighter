@@ -50,11 +50,14 @@
 .eqv RIGHT2	0x7A000000		# '3' RIGHT
 .eqv RIGHT2_K	0x04000000		# '3' RIGHT KEY
 
+.eqv DOWN1	0x1B000000		# 's' DOWN
+.eqv DOWN1_K	0x08000000		# 's' DOWN
+.eqv UP1	0x1D000000		# 'w' UP
+.eqv UP1_K	0x20000000		# 'w' UP
+
 .eqv ENTER	0x5A000000		# 'enter' 
 .eqv ENTER_K	0x04000000		# 'enter' key
 
-.eqv DOWN	0x1B000000		# 's' DOWN
-.eqv UP		0x1D000000		# 'w' UP
 .eqv L_PUNCH	0x34000000		# 'g' LIGHT PUNCH
 .eqv M_PUNCH	0x33000000		# 'h' MEDIUM PUNCH
 .eqv H_PUNCH	0x3B000000		# 'j' HEAVY PUNCH
@@ -66,7 +69,7 @@
 
 ### VGA MAP ### 
 .eqv VGA_INI_ADDR 0xFF000000		# VGA initial address
-.eqv VGA_QTD_BYTE 76800			# Maximum size of the screen
+.eqv VGA_QTD_BYTE 76800			# Maximum size of the screen (12C00)
 
 ### SD AND SRAM MAP ### 
 # ARQUIVO.txt sem header
@@ -76,21 +79,32 @@
 # Olhe pelo WinHex o offset do seu cartao SD
 					
 .eqv USER_DATA     0x10012000		# SRAM address to load char from SD 
-.eqv CHAR1_BUFFER  0x1003B400		# SRAM address to keep the first char's buffer
-.eqv CHAR2_BUFFER  0x10064800		# SRAM address to keep the second char's buffer
-.eqv START1_BUFFER 0x100DB000		# SRAM address to keep the first image's buffer
-.eqv START2_BUFFER 0x10151800		# SRAM address to keep the second image's buffer
-.eqv SELECT_BUFFER 0x101C8000
+.eqv CHAR1_BUFFER  0x100192D8		# SRAM address to keep the first char's buffer
+.eqv CHAR2_BUFFER  0x100205B0		# SRAM address to keep the second char's buffer
+.eqv START1_BUFFER 0x10027888		# SRAM address to keep the insert coin first image's buffer
+.eqv START2_BUFFER 0x1003A488		# SRAM address to keep the insert coin second image's buffer
+.eqv ARCADE_BUFFER 0x1004D088		# SRAM address to keep the arcade menu's buffer
+.eqv VERSUS_BUFFER 0x1005FC88		# SRAM address to keep the versus menu's buffer
+.eqv SELECT_BUFFER 0x10072888		# SRAM address to keep the select char image's buffer
+#.eqv S1_BUFFER	   0x101E0000
+#.eqv S2_BUFFER	   0x101F8000
+#.eqv S1_BACK_BUFF  0x10210000
+#.eqv S2_BACK_BUFF  0x10228000
 
 ### MENU MAP ### 
-.eqv START1	  0x00054E00		# Init image 1
-.eqv START2	  0x00068E00		# Init image 2
-.eqv SELECT	  0x00150E00
+.eqv START1	  0x000A4000		# Insert coin menu 1
+.eqv START2	  0x00090000		# Insert coin menu 2
+.eqv ARCADE	  0x0022C000		# Arcade menu
+.eqv VERSUS	  0x00240000		# Versus menu
+.eqv SELECT	  0x0037C000		# Select menu
+.eqv S12	  0x00368000		# Select box 1 and 2
+
+.eqv SELECT_QTD	  18000			# Select box image bytes size
 
 ### CHARACTERS MAP ### 
 .eqv RYU_STAGE	  0x00088E00		# Ryu's stage sd address
 .eqv RYU	  0x0009CE00		# Ryu's char sd address
-.eqv RYU_QTD	  29400			# Ryu's bytes size
+.eqv RYU_QTD	  29400			# Ryu's bytes size (72D8)
 
 .text
 
@@ -117,6 +131,7 @@ INIT:
 
 LOAD_SD:
 	la	$a0, START1
+	addi	$a0, $a0, 0x10E00
 	la	$a1, START1_BUFFER	# Destiny of the address to read from SD card 
 	li	$a2, VGA_QTD_BYTE	# Bytes size to read
 	
@@ -125,6 +140,7 @@ LOAD_SD:
 	nop
 	
 	la	$a0, START2
+	addi	$a0, $a0, 0x10E00
 	la	$a1, START2_BUFFER	# Destiny of the address to read from SD card 
 	li	$a2, VGA_QTD_BYTE	# Bytes size to read
 	
@@ -132,7 +148,26 @@ LOAD_SD:
 	syscall				#
 	nop
 	
+	la	$a0, ARCADE
+	addi	$a0, $a0, 0x10E00
+	la	$a1, ARCADE_BUFFER	# Destiny of the address to read from SD card 
+	li	$a2, VGA_QTD_BYTE	# Bytes size to read
+	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+	
+	la	$a0, VERSUS
+	addi	$a0, $a0, 0x10E00
+	la	$a1, VERSUS_BUFFER	# Destiny of the address to read from SD card 
+	li	$a2, VGA_QTD_BYTE	# Bytes size to read
+	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+	
 	la	$a0, SELECT
+	addi	$a0, $a0, 0x10E00
 	la	$a1, SELECT_BUFFER	# Destiny of the address to read from SD card 
 	li	$a2, VGA_QTD_BYTE	# Bytes size to read
 	
@@ -342,66 +377,110 @@ PRINT_VGA:
 CONTROL:
 	beq 	$a0, LEFT1, 	MOVE1_L	# test if 'a' was pressed
 	beq 	$a0, LEFT2, 	MOVE2_L	# test if '1' was pressed
-	beq 	$a0, DOWN, 	EXIT	# test if 's' was pressed
+	beq 	$a0, DOWN1, 	EXIT	# test if 's' was pressed
 	beq 	$a0, RIGHT1, 	MOVE1_R	# test if 'd' was pressed
 	beq 	$a0, RIGHT2, 	MOVE2_R	# test if 'd' was pressed
-	beq 	$a0, UP, 	EXIT	# test if 'w' was pressed
+	beq 	$a0, UP1, 	EXIT	# test if 'w' was pressed
 	beq 	$a0, L_PUNCH, 	EXIT	# test if 'g' was pressed
 	beq 	$a0, L_KICK, 	EXIT	# test if 'b' was pressed
 	beq 	$a0, ENTER, 	EXIT	# test if 'o' was pressed
 	beq 	$a0, BACK, 	EXIT	# test if 'p' was pressed
 	
-UPDATE_BUFFER:
-	la 	$t0, KB1			# get key from buffer
-	lw	$t1, 0($t0)			#
-	
-	sll 	$a0, $t1, 24			# shift 24 bits left on the buffer
-						# in case the buffer is full
-					
-	beq 	$a0, ENTER, SELECT_SETUP	# test if 'enter' was pressed
-	
 MAIN_COIN:
 	la	$t0, K3				# PS2 Keyboard Key3 
 	lw	$t1, 0($t0)			# get keymap 3
 	andi	$t2, $t1, ENTER_K		# check if 'enter' was pressed
-	beq	$t2, ENTER_K, UPDATE_BUFFER	# if 'ebter' was pressed than get key from buffer
+	beq	$t2, ENTER_K, SETUP_ARCADE	#
 	
-	la	$t1, START1_BUFFER		# Menu start address
-	jal 	PRINT_VGA			# Start game
+	la	$t1, START1_BUFFER		# Insert coin 1 address
+	jal 	PRINT_VGA			#
 	nop
 	
-	la	$t1, START2_BUFFER		# Menu start address
-	jal 	PRINT_VGA			# Start game
+	la	$t1, START2_BUFFER		# Insert coin 2 address
+	jal 	PRINT_VGA			# 
 	nop
 	
 	j MAIN_COIN
 	nop
 	
+SETUP_ARCADE:
+	la	$t1, ARCADE_BUFFER		# Arcade menu address
+	jal 	PRINT_VGA			# 
+	nop
+	
+ARCADE_OPT:
+	la	$t0, K1				# PS2 Keyboard Key1 
+	lw	$t1, 0($t0)			# get keymap 1
+	andi	$t2, $t1, DOWN1_K		# check if 's' was pressed
+	beq	$t2, DOWN1_K, SETUP_VERSUS	#
+	
+	la	$t0, K3				# PS2 Keyboard Key3 
+	lw	$t1, 0($t0)			# get keymap 3
+	andi	$t2, $t1, ENTER_K		# check if 'enter' was pressed
+	beq	$t2, ENTER_K, SELECT_SETUP	#
+	
+	j ARCADE_OPT
+
+SETUP_VERSUS:
+	la	$t1, VERSUS_BUFFER		# Arcade menu address
+	jal 	PRINT_VGA			# 
+	nop
+	
+VERSUS_OPT:
+	la	$t0, K1				# PS2 Keyboard Key1 
+	lw	$t1, 0($t0)			# get keymap 1
+	andi	$t2, $t1, UP1_K			# check if 'w' was pressed
+	beq	$t2, UP1_K, SETUP_ARCADE	#
+	
+	la	$t0, K3				# PS2 Keyboard Key3 
+	lw	$t1, 0($t0)			# get keymap 3
+	andi	$t2, $t1, ENTER_K		# check if 'enter' was pressed
+	beq	$t2, ENTER_K, SELECT_SETUP	#
+	
+	j VERSUS_OPT
+	
 SELECT_SETUP:
-	la	$t1, SELECT_BUFFER		# Menu start address
-	jal 	PRINT_VGA			# Start game
+	la	$t1, SELECT_BUFFER	# Select menu address
+	jal 	PRINT_VGA		# 
+	nop
+	
+	#la	$t1, S1_BUFFER		
+	#la	$s7, S1_BACK_BUFF	
+	#li 	$s5, 90			# X coordinate
+	#li 	$s6, 80			# Y coordinate
+	#jal 	PRINT_SELECT		
+	#nop
+		
+	#la	$t1, S2_BUFFER			
+	#la	$s7, S2_BACK_BUFF
+	#li 	$s5, 170		# X coordinate
+	#li 	$s6, 80			# Y coordinate	
+	#jal 	PRINT_SELECT			
+	#nop
+	
+	j SELECT_SETUP
 	nop
 	
 MAIN_SELECT:
 	la	$t0, K1				# PS2 Keyboard Key1 
 	lw	$t1, 0($t0)			# get keymap 1
 	andi	$t2, $t1, LEFT1_K		# check if 'a' was pressed
-	beq	$t2, LEFT1_K, UPDATE_BUFFER	# if 'a' was pressed than get key from buffer
+	#beq	$t2, LEFT1_K, UPDATE_BUFFER	# if 'a' was pressed than get key from buffer
 	
 	la	$t0, K2				# PS2 Keyboard Key2 
 	lw	$t1, 0($t0)			# get keymap 2
 	andi	$t2, $t1, RIGHT1_K		# check if 'd' was pressed
-	beq	$t2, RIGHT1_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
+	#beq	$t2, RIGHT1_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
 	
-	la	$t0, K4				# PS2 Keyboard Key2 
-	lw	$t1, 0($t0)			# get keymap 4
-	andi	$t2, $t1, LEFT2_K		# check if '1' was pressed
-	beq	$t2, LEFT2_K, UPDATE_BUFFER	# if '1' was pressed than get key from buffer
+	#la	$t0, K4				# PS2 Keyboard Key2 
+	#lw	$t1, 0($t0)			# get keymap 4
+	#andi	$t2, $t1, LEFT2_K		# check if '1' was pressed
+	#beq	$t2, LEFT2_K, UPDATE_BUFFER	# if '1' was pressed than get key from buffer
 	
-	la	$t0, K4				# PS2 Keyboard Key2 
-	lw	$t1, 0($t0)			# get keymap 4
-	andi	$t2, $t1, RIGHT2_K		# check if '3' was pressed
-	beq	$t2, RIGHT2_K, UPDATE_BUFFER	# if '3' was pressed than get key from buffer
+	#la	$t0, K4				# PS2 Keyboard Key2 
+	#lw	$t1, 0($t0)			# get keymap 4
+	#andi	$t2, $t1, RIGHT2_K		# check if '3' was pressed
+	#beq	$t2, RIGHT2_K, UPDATE_BUFFER	# if '3' was pressed than get key from buffer
 	
 	#la	$t1, CHAR1_BUFFER		# SRAM buffer address
 	#lw	$s5, 0($sp)			# X coordinate
@@ -539,6 +618,70 @@ CLEAN_PATH:
 	OUT11:	
 		jr	$ra
 		nop	
+	
+PRINT_SELECT:
+	#li 	$t0, 148		# X coordinate
+	#sw	$t0, 0($sp)		#
+	#li 	$t1, 80			# Y coordinate
+	#sw	$t1, 4($sp)		#
+	
+	la	$t0, VGA_INI_ADDR	# VGA initial address
+	#sw	$s7, 8($sp)		#
+	
+	move 	$t2, $zero		# First counter (c1) to print char
+	move 	$t3, $zero		# Second counter (c2) to print char
+	
+	li 	$t4, 320		# Size of the screen
+	li	$t8, 50
+	
+	#lw	$s5, 0($sp)		# X coordinate
+	#lw	$s6, 4($sp)		# Y coordinate
+	
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 58			# Select width (x)
+	
+	FOR1S1:	
+		beq 	$t2, $t5, OUT1S1	# If all the lines was print then exit ryu print (50)
+
+	FOR2S1:	
+		beq 	$t3, $t6, OUT2S1		# If all the columns was print then continue the outer loop (58)
+		
+		# sd (c1 * 50) + (c2 + x) -> lb
+		mult 	$t2, $t8	# (c1 * 58)
+		mflo	$t9		#
+		add	$s0, $t9, $t3	# (c1 * 58) + c2
+		add	$s0, $s0, $t6	# (c1 * 58) + (c2 + x)
+		add	$s1, $s0, $t1	# Add on select address on SSRAM
+		lb	$s2, 0($s1)
+		
+		# vga (y + c1)*320 + (x + c2) -> sb
+		add	$t9, $s6, $t2	# y + c1
+		mult	$t9, $t4	# (y + c1)*320
+		mflo	$s1		#
+		add	$s1, $s1, $s5	# (y + c1)*320 + x
+		add	$s3, $s1, $t3	# (y + c1)*320 + (x + c2)
+		add	$s4, $s3, $t0	# Add on VGA's address
+		
+		lb	$t7, 0($s4)	# Collect buffer behind select
+		sb	$t7, 0($s7)	# Save buffer on SRAM
+		add	$s7, $s7, 1 	# Increase SRAM's index
+
+		sb	$s2, 0($s4)	# Print select on VGA
+
+		addi 	$t3, $t3, 1
+		
+		j 	FOR2S1
+		nop	
+		
+	OUT2S1:	
+		addi 	$t2, $t2, 1
+		move 	$t3, $zero
+		
+		j 	FOR1S1
+		nop	
+	OUT1S1:	
+		jr	$ra
+		nop
 	
 EXIT:
 	la $s4, 0x0ACEF0DA
