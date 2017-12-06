@@ -25,6 +25,7 @@
 # Registers mapped:						#
 #	0($sp) : Ryu X Coordinate				#
 #	4($sp) : Ryu Y Coordinate				#
+#	8($sp) : Background char buffer
 #################################################################
 
 #################### MARS INTERFACE ADDRESSES ################### 
@@ -57,17 +58,18 @@
 .eqv VGA_QTD_BYTE 76800			# Maximum size of the screen
 
 ### SD AND SRAM MAP ### 
-.eqv SD_DATA_ADDR 0x413E00		# ARQUIVO.txt sem header
-					# Addr = Offset, Offset = 0x10E00
-					# [Caso tenha header Addr = Offset + (137 * 512) = Offset + 0x00011200 
-					# (defasagem de setores logicos/fisicos * tamanho do setor)]
-					# Olhe pelo WinHex o offset do seu cartao SD
+# ARQUIVO.txt sem header
+# Addr = Offset, Offset = 0x10E00
+# [Caso tenha header Addr = Offset + (137 * 512) = Offset + 0x00011200 
+# (defasagem de setores logicos/fisicos * tamanho do setor)]
+# Olhe pelo WinHex o offset do seu cartao SD
 					
 .eqv USER_DATA    0x10012000		# SRAM address to load char from SD 
 .eqv CHAR_BUFFER  0x1003B400		# SRAM address to keep the char's buffer
 
 ### CHARACTERS MAP ### 
-.eqv RYU	  0x515E00		# Ryu's SD address
+.eqv RYU_STAGE	  0x00088E00		# Ryu's stage sd address
+.eqv RYU	  0x0009CE00		# Ryu's char sd address
 .eqv RYU_QTD	  29400			# Ryu's bytes size
 
 .text
@@ -110,24 +112,29 @@ PRINT_CHAR_VGA:
 	
 	move 	$t2, $zero		# First counter (c1) to print char
 	move 	$t3, $zero		# Second counter (c2) to print char
+	
 	li 	$t4, 320		# Size of the screen
 	
 	lw	$s5, 0($sp)		# X coordinate
 	lw	$s6, 4($sp)		# Y coordinate
 	
-	li 	$t5, 92			# Ryu height (y)
-	li 	$t6, 49			# Ryu width (x)
+	li 	$t5, 90			# Char height (y)
+	move 	$t6, $zero		# Char width (x)
+	
+	FOR0:
+		beq 	$t6, 240, OUT0	# If ends sequence exit the loop
 	
 	FOR1:	
-		beq 	$t2, $t5, OUT1	# If all the lines was print then exit ryu print (92)
+		beq 	$t2, $t5, OUT1	# If all the lines was print then exit ryu print (90)
 
 	FOR2:	
-		beq 	$t3, $t6, OUT2	# If all the columns was print then continue the outer loop (49)
+		beq 	$t3, 60, OUT2	# If all the columns was print then continue the outer loop (60)
 		
-		# sd (c1 * 320) + c2 -> lb
+		# sd (c1 * 320) + (c2 + x) -> lb
 		mult 	$t2, $t4	# (c1 * 320)
 		mflo	$t9		#
 		add	$s0, $t9, $t3	# (c1 * 320) + c2
+		add	$s0, $s0, $t6	# (c1 * 320) + (c2 + x)
 		add	$s1, $s0, $t1	# Add on Ryu's address on SSRAM
 		lb	$s2, 0($s1)
 		
@@ -139,12 +146,16 @@ PRINT_CHAR_VGA:
 		add	$s3, $s1, $t3	# (y + c1)*320 + (x + c2)
 		add	$s4, $s3, $t0	# Add on VGA's address
 		
-		lb	$t7, 0($s4)	# Collect buffer behind character
+		slti	$t9, $t6, 60
+		beq	$t9, $zero, GO_VGA
 		
-		sb	$s2, 0($s4)	# Print char on VGA
+		GET_BUFF:
+			lb	$t7, 0($s4)	# Collect buffer behind character
+			sb	$t7, 0($s7)	# Save buffer on SRAM
+			add	$s7, $s7, 1 	# Increase SRAM's index
 		
-		sb	$t7, 0($s7)	# Save buffer on SRAM
-		add	$s7, $s7, 1 	# Increase SRAM's index
+		GO_VGA:
+			sb	$s2, 0($s4)	# Print char on VGA
 
 		addi 	$t3, $t3, 1
 		
@@ -158,11 +169,18 @@ PRINT_CHAR_VGA:
 		j 	FOR1
 		nop	
 	OUT1:	
+		move 	$t2, $zero
+		addi 	$t6, $t6, 60	# Next char sequence
+				
+		j 	FOR0
+		nop
+	
+	OUT0:	
 		jr	$ra
 		nop
 
 VGA:		 
-	la	$a0, SD_DATA_ADDR	# Stages address
+	la	$a0, RYU_STAGE		# Stages address
 	la	$a1, USER_DATA		# Destiny of the address to read SD card 
 	li	$a2, VGA_QTD_BYTE	# Bytes size to read
 	
@@ -214,7 +232,13 @@ MAIN:
 	lw	$t1, 0($t0)			# get keymap 2
 	andi	$t2, $t1, RIGHT_K		# check if 'd' was pressed
 	beq	$t2, RIGHT_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
-				
+		
+	jal	CLEAN_PATH_VGA
+	nop
+			
+	jal PRINT_CHAR_VGA
+	nop
+	
 	j MAIN
 	nop
 
@@ -223,7 +247,7 @@ MOVE_R:
 	nop
 	
 	lw	$t0, 0($sp)		# X coordinate
-	addi 	$t1, $t0, 20		# Add 20 steps when Ryu move to right
+	addi 	$t1, $t0, 5		# Add 20 steps when Ryu move to right
 	sw	$t1, 0($sp)		# X updated
 
 	jal	PRINT_CHAR_VGA
@@ -237,7 +261,7 @@ MOVE_L:
 	nop
 	
 	lw	$t0, 0($sp)		# X coordinate
-	addi 	$t1, $t0, -20		# Sub 20 steps when Ryu move to left
+	addi 	$t1, $t0, -5		# Sub 20 steps when Ryu move to left
 	sw	$t1, 0($sp)		# X updated
 
 	jal	PRINT_CHAR_VGA
@@ -257,8 +281,8 @@ CLEAN_PATH_VGA:
 	lw	$s5, 0($sp)		# X coordinate
 	lw	$s6, 4($sp)		# Y coordinate
 	
-	li 	$t5, 92			# Ryu height (y)
-	li 	$t6, 49			# Ryu width (x)
+	li 	$t5, 90			# Ryu height (y)
+	li 	$t6, 60			# Ryu width (x)
 	
 	FOR11:	
 		beq 	$t2, $t5, OUT11	# If all the lines was print then exit ryu print (92)
