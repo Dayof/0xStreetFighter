@@ -86,10 +86,11 @@
 .eqv ARCADE_BUFFER 0x1004D088		# SRAM address to keep the arcade menu's buffer
 .eqv VERSUS_BUFFER 0x1005FC88		# SRAM address to keep the versus menu's buffer
 .eqv SELECT_BUFFER 0x10072888		# SRAM address to keep the select char image's buffer
-#.eqv S1_BUFFER	   0x101E0000
-#.eqv S2_BUFFER	   0x101F8000
-#.eqv S1_BACK_BUFF  0x10210000
-#.eqv S2_BACK_BUFF  0x10228000
+.eqv S1_BUFFER	   0x10085488		# SRAM address to keep the select box 1's buffer
+.eqv S2_BUFFER	   0x10089AD8		# SRAM address to keep the select box 2's buffer
+.eqv S1_BACK_BUFF  0x1008E128
+.eqv S2_BACK_BUFF  0x10092778
+.eqv S12_BUFFER	   0x10096DC8		
 
 ### MENU MAP ### 
 .eqv START1	  0x000A4000		# Insert coin menu 1
@@ -97,9 +98,9 @@
 .eqv ARCADE	  0x0022C000		# Arcade menu
 .eqv VERSUS	  0x00240000		# Versus menu
 .eqv SELECT	  0x0037C000		# Select menu
-.eqv S12	  0x00368000		# Select box 1 and 2
 
-.eqv SELECT_QTD	  18000			# Select box image bytes size
+.eqv S12	  0x00368000		# Select box 1 and 2
+.eqv SELECT_QTD	  18000			# Select box image bytes size (4650)
 
 ### CHARACTERS MAP ### 
 .eqv RYU_STAGE	  0x00088E00		# Ryu's stage sd address
@@ -169,6 +170,15 @@ LOAD_SD:
 	la	$a0, SELECT
 	addi	$a0, $a0, 0x10E00
 	la	$a1, SELECT_BUFFER	# Destiny of the address to read from SD card 
+	li	$a2, VGA_QTD_BYTE	# Bytes size to read
+	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+	
+	la	$a0, S12
+	addi	$a0, $a0, 0x10E00
+	la	$a1, S12_BUFFER		# Destiny of the address to read from SD card 
 	li	$a2, VGA_QTD_BYTE	# Bytes size to read
 	
 	li	$v0, 49			# SYSCALL 49 - read from sd card 
@@ -444,19 +454,23 @@ SELECT_SETUP:
 	jal 	PRINT_VGA		# 
 	nop
 	
-	#la	$t1, S1_BUFFER		
-	#la	$s7, S1_BACK_BUFF	
-	#li 	$s5, 90			# X coordinate
-	#li 	$s6, 80			# Y coordinate
-	#jal 	PRINT_SELECT		
-	#nop
+	la	$t1, S12_BUFFER	
 		
-	#la	$t1, S2_BUFFER			
-	#la	$s7, S2_BACK_BUFF
-	#li 	$s5, 170		# X coordinate
-	#li 	$s6, 80			# Y coordinate	
-	#jal 	PRINT_SELECT			
-	#nop
+	la	$s7, S1_BACK_BUFF	
+	li 	$s5, 80			# X coordinate
+	li 	$s6, 145		# Y coordinate
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 0			# Select width (x)
+	jal 	PRINT_SELECT		
+	nop	
+			
+	la	$s7, S2_BACK_BUFF
+	li 	$s5, 180		# X coordinate
+	li 	$s6, 145		# Y coordinate	
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 58			# Select width (x)
+	jal 	PRINT_SELECT			
+	nop
 	
 	j SELECT_SETUP
 	nop
@@ -632,25 +646,21 @@ PRINT_SELECT:
 	move 	$t3, $zero		# Second counter (c2) to print char
 	
 	li 	$t4, 320		# Size of the screen
-	li	$t8, 50
 	
 	#lw	$s5, 0($sp)		# X coordinate
 	#lw	$s6, 4($sp)		# Y coordinate
-	
-	li 	$t5, 50			# Select height (y)
-	li 	$t6, 58			# Select width (x)
 	
 	FOR1S1:	
 		beq 	$t2, $t5, OUT1S1	# If all the lines was print then exit ryu print (50)
 
 	FOR2S1:	
-		beq 	$t3, $t6, OUT2S1		# If all the columns was print then continue the outer loop (58)
+		beq 	$t3, 58, OUT2S1	# If all the columns was print then continue the outer loop (58)
 		
-		# sd (c1 * 50) + (c2 + x) -> lb
-		mult 	$t2, $t8	# (c1 * 58)
+		# sd (c1 * 320) + (c2 + x) -> lb
+		mult 	$t2, $t4	# (c1 * 320)
 		mflo	$t9		#
-		add	$s0, $t9, $t3	# (c1 * 58) + c2
-		add	$s0, $s0, $t6	# (c1 * 58) + (c2 + x)
+		add	$s0, $t9, $t3	# (c1 * 320) + c2
+		add	$s0, $s0, $t6	# (c1 * 320) + (c2 + x)
 		add	$s1, $s0, $t1	# Add on select address on SSRAM
 		lb	$s2, 0($s1)
 		
