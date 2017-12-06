@@ -149,6 +149,7 @@
 
 ## MUSIC ##
 .data
+
 	QTDNOTAS:	.word 130
 	DELAY:		.word 96, 96, 96, 960, 192, 192, 192, 576, 96, 96, 384, 384, 960, 192, 192, 192, 384, 672, 96, 192, 192, 96, 192, 864, 192, 192, 96, 192, 864, 384, 960, 192, 192, 192, 384, 576, 384, 192, 960, 192, 192, 192, 960, 192, 96, 384, 288, 192, 192, 288, 480, 960, 192, 192, 192, 960, 192, 96, 288, 288, 288, 192, 288, 288, 192, 1920, 384, 288, 96, 96, 192, 480, 384, 288, 96, 96, 192, 192, 96, 960, 192, 192, 96, 96, 96, 1632, 384, 288, 96, 96, 192, 480, 384, 288, 96, 96, 192, 192, 96, 768, 192, 192, 192, 384, 576, 192, 192, 192, 96, 192, 5664, 96, 96, 960, 192, 192, 192, 576, 96, 96, 384, 384, 960, 192, 192, 192, 384, 672, 96, 192,
 
@@ -728,13 +729,13 @@ MUSICA:
 	
 UPDATE_BOX_L2:
 
-	addi	$a1, $a1, -1
-
 	lw	$s5, 32($sp)		# X coordinate
 	lw	$s6, 36($sp)		# Y coordinate
 
 	slti	$t8, $s5, 90
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a1, $a1, -1
 
 	la	$t1, S2_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -759,13 +760,13 @@ UPDATE_BOX_L2:
 	
 UPDATE_BOX_R2:
 
-	addi	$a1, $a1, 1
-
 	lw	$s5, 32($sp)		# X coordinate
 	lw	$s6, 36($sp)		# Y coordinate
 	
 	sgt	$t8, $s5, 170
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a1, $a1, 1
 
 	la	$t1, S2_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -789,13 +790,13 @@ UPDATE_BOX_R2:
 	
 UPDATE_BOX_U2:
 
-	addi	$a1, $a1, -4
-
 	lw	$s5, 32($sp)		# X coordinate
 	lw	$s6, 36($sp)		# Y coordinate
 	
 	slti	$t8, $s6, 160
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a1, $a1, -4
 	
 	la	$t1, S2_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -820,13 +821,13 @@ UPDATE_BOX_U2:
 	
 UPDATE_BOX_D2:
 
-	addi	$a1, $a1, 4
-
 	lw	$s5, 32($sp)		# X coordinate
 	lw	$s6, 36($sp)		# Y coordinate
 	
 	sgt	$t8, $s6, 170
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a1, $a1, 4
 	
 	la	$t1, S2_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -849,14 +850,14 @@ UPDATE_BOX_D2:
 	nop
 
 UPDATE_BOX_L1:
-
-	addi	$a2, $a2, -1
 		
 	lw	$s5, 24($sp)		# X coordinate
 	lw	$s6, 28($sp)		# Y coordinate
 	
 	slti	$t8, $s5, 81
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a2, $a2, -1
 	
 	la	$t1, S1_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -880,14 +881,14 @@ UPDATE_BOX_L1:
 
 	
 UPDATE_BOX_R1:
-
-	addi	$a2, $a2, 1
 	
 	lw	$s5, 24($sp)		# X coordinate
 	lw	$s6, 28($sp)		# Y coordinate
 	
 	sgt	$t8, $s5, 170
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a2, $a2, 1
 	
 	la	$t1, S1_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -911,13 +912,13 @@ UPDATE_BOX_R1:
 	
 UPDATE_BOX_U1:
 
-	addi	$a2, $a2, -4
-
 	lw	$s5, 24($sp)		# X coordinate
 	lw	$s6, 28($sp)		# Y coordinate
 	
 	slti	$t8, $s6, 160
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a2, $a2, -4
 	
 	la	$t1, S1_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -942,13 +943,13 @@ UPDATE_BOX_U1:
 	
 UPDATE_BOX_D1:
 
-	addi	$a2, $a2, 4
-
 	lw	$s5, 24($sp)		# X coordinate
 	lw	$s6, 28($sp)		# Y coordinate
 	
 	sgt	$t8, $s6, 170
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a2, $a2, 4
 	
 	la	$t1, S1_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
