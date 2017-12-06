@@ -33,6 +33,8 @@
 #	28($sp) : Select box 1 Y Coordinate			#
 #	32($sp) : Select box 2 X Coordinate			#
 #	36($sp) : Select box 2 Y Coordinate			#
+#	40($sp) : P1 char address				#
+#	44($sp) : P2 char address				#
 #################################################################
 
 #################### MARS INTERFACE ADDRESSES ################### 
@@ -99,6 +101,9 @@
 .eqv S2_BACK_BUFF  0x10089AD8		
 .eqv S12_BUFFER	   0x1008E128	
 .eqv RYU_S_BUFFER  0x10092778	
+.eqv RYU_C_BUFFER  0x100A5378
+.eqv KEN_S_BUFFER  0x100AC650	
+.eqv KEN_C_BUFFER  0x100BF250
 
 ### MENU MAP ### 
 .eqv START1	  0x000A4000		# Insert coin menu 1
@@ -112,7 +117,10 @@
 
 ### CHARACTERS MAP ### 
 .eqv RYU_STAGE	  0x0045C000		# Ryu's stage sd address
-.eqv RYU	  0x0009CE00		# Ryu's char sd address
+.eqv RYU	  0x00284000		# Ryu's char sd address
+
+.eqv KEN_STAGE    0x00434000	
+.eqv KEN	  0x00214000		# Ken's char sd address
 
 .eqv HONDA_STAGE  0x0045C000	
 .eqv HONDA	  0x0009CE00		# Honda's char sd address
@@ -122,9 +130,6 @@
 
 .eqv GUILE_STAGE  0x0045C000	
 .eqv GUILE	  0x0009CE00		# Guile's char sd address
-
-.eqv KEN_STAGE    0x0045C000	
-.eqv KEN	  0x0009CE00		# Ken's char sd address
 
 .eqv CHUN_STAGE   0x0045C000	
 .eqv CHUN	  0x0009CE00		# Chun-li's char sd address
@@ -140,14 +145,11 @@
 .text
 
 INIT:
-	addi	$sp, $sp, -44 		# Init stack
+	addi	$sp, $sp, -48 		# Init stack
 	
 	jal 	LOAD_SD
 	nop
-	
-	#jal	SETUP_CHAR2		# Print char 2
-	#nop	
-	
+
 	j 	MAIN_COIN		# Main logic
 	nop		
 	
@@ -218,7 +220,35 @@ LOAD_SD:
 	syscall				#
 	nop
 	
+	la	$a0, RYU
+	addi	$a0, $a0, 0x10E00
+	la	$a1, RYU_C_BUFFER	
+	li	$a2, CHAR_QTD
+	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+
+	la	$a0, KEN_STAGE
+	addi	$a0, $a0, 0x10E00
+	la	$a1, KEN_S_BUFFER	
+	li	$a2, VGA_QTD_BYTE
+	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+	
+	la	$a0, KEN
+	addi	$a0, $a0, 0x10E00
+	la	$a1, KEN_C_BUFFER	
+	li	$a2, CHAR_QTD
+	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+	
 	jr $ra
+	nop
 	
 SETUP_CHAR2:	
 	li 	$t0, 210		# X coordinate
@@ -228,7 +258,7 @@ SETUP_CHAR2:
 	
 	la	$a0, RYU
 	la	$a1, USER_DATA		# SRAM address
-	li	$a2, RYU_CHAR_QTD
+	li	$a2, CHAR_QTD
 	
 	li	$v0, 49			# SYSCALL 49 - read from sd card 
 	syscall				#
@@ -310,95 +340,6 @@ PRINT_CHAR2:
 		jr	$ra
 		nop
 		
-SETUP_CHAR1:	
-	li 	$t0, 60			# X coordinate
-	sw	$t0, 0($sp)		#
-	li 	$t1, 130		# Y coordinate
-	sw	$t1, 4($sp)		#
-	
-	la	$a0, RYU
-	la	$a1, USER_DATA		# SRAM address
-	li	$a2, RYU_CHAR_QTD
-	
-	li	$v0, 49			# SYSCALL 49 - read from sd card 
-	syscall				#
-	nop
-	
-PRINT_CHAR1:
-	la	$t0, VGA_INI_ADDR	# VGA initial address
-	la	$t1, USER_DATA		# SRAM address to collect char
-	la	$s7, CHAR1_BUFFER	# SRAM address to collet buffer
-	sw	$s7, 8($sp)		#
-	
-	move 	$t2, $zero		# First counter (c1) to print char
-	move 	$t3, $zero		# Second counter (c2) to print char
-	
-	li 	$t4, 320		# Size of the screen
-	
-	lw	$s5, 0($sp)		# X coordinate
-	lw	$s6, 4($sp)		# Y coordinate
-	
-	li 	$t5, 90			# Char height (y)
-	move 	$t6, $zero		# Char width (x)
-	
-	FOR0C1:
-		beq 	$t6, 240, OUT0C1	# If ends sequence exit the loop
-	
-	FOR1C1:	
-		beq 	$t2, $t5, OUT1C1	# If all the lines was print then exit ryu print (90)
-
-	FOR2C1:	
-		beq 	$t3, 60, OUT2C1		# If all the columns was print then continue the outer loop (60)
-		
-		# sd (c1 * 320) + (c2 + x) -> lb
-		mult 	$t2, $t4	# (c1 * 320)
-		mflo	$t9		#
-		add	$s0, $t9, $t3	# (c1 * 320) + c2
-		add	$s0, $s0, $t6	# (c1 * 320) + (c2 + x)
-		add	$s1, $s0, $t1	# Add on char1's address on SSRAM
-		lb	$s2, 0($s1)
-		
-		# vga (y + c1)*320 + (x + c2) -> sb
-		add	$t9, $s6, $t2	# y + c1
-		mult	$t9, $t4	# (y + c1)*320
-		mflo	$s1		#
-		add	$s1, $s1, $s5	# (y + c1)*320 + x
-		add	$s3, $s1, $t3	# (y + c1)*320 + (x + c2)
-		add	$s4, $s3, $t0	# Add on VGA's address
-		
-		slti	$t9, $t6, 60
-		beq	$t9, $zero, GO_VGAC1
-		
-		GET_BUFFC1:
-			lb	$t7, 0($s4)	# Collect buffer behind character
-			sb	$t7, 0($s7)	# Save buffer on SRAM
-			add	$s7, $s7, 1 	# Increase SRAM's index
-		
-		GO_VGAC1:
-			sb	$s2, 0($s4)	# Print char on VGA
-
-		addi 	$t3, $t3, 1
-		
-		j 	FOR2C1
-		nop	
-		
-	OUT2C1:	
-		addi 	$t2, $t2, 1
-		move 	$t3, $zero
-		
-		j 	FOR1C1
-		nop	
-	OUT1C1:	
-		move 	$t2, $zero
-		addi 	$t6, $t6, 60	# Next char sequence
-				
-		j 	FOR0C1
-		nop
-	
-	OUT0C1:	
-		jr	$ra
-		nop
-
 PRINT_VGA:
 	la	$t0, VGA_INI_ADDR	# Reset vga and sram addresses
 					# Loop to print on screen
@@ -451,6 +392,7 @@ ARCADE_OPT:
 	beq	$t2, ENTER_K, SELECT_SETUP	#
 	
 	j ARCADE_OPT
+	nop
 
 SETUP_VERSUS:
 	la	$t1, VERSUS_BUFFER		# Arcade menu address
@@ -469,6 +411,7 @@ VERSUS_OPT:
 	beq	$t2, ENTER_K, SELECT_SETUP	#
 	
 	j VERSUS_OPT
+	nop
 	
 SELECT_SETUP:
 	la	$t1, SELECT_BUFFER	# Select menu address
@@ -554,14 +497,152 @@ MAIN_SELECT:
 	andi	$t2, $t1, ENTER_K		# check if 'enter' was pressed
 	beq	$t2, ENTER_K, STAGE_SETUP	#
 	
-	#la	$t1, CHAR1_BUFFER		# SRAM buffer address
-	#lw	$s5, 0($sp)			# X coordinate
-	#lw	$s6, 4($sp)			# Y coordinate
-	#jal	CLEAN_PATH
-	#nop
-			
-	#jal 	PRINT_CHAR1
-	#nop
+	j MAIN_SELECT
+	nop
+
+PRINT_CHAR1:
+	la	$t0, VGA_INI_ADDR	# VGA initial address
+	la	$s7, CHAR1_BUFFER	# SRAM address to collet buffer
+	sw	$s7, 8($sp)		#
+	
+	move 	$t2, $zero		# First counter (c1) to print char
+	move 	$t3, $zero		# Second counter (c2) to print char
+	
+	li 	$t4, 320		# Size of the screen
+	
+	lw	$s5, 0($sp)		# X coordinate
+	lw	$s6, 4($sp)		# Y coordinate
+	
+	li 	$t5, 90			# Char height (y)
+	move 	$t6, $zero		# Char width (x)
+	
+	FOR0C1:
+		beq 	$t6, 240, OUT0C1	# If ends sequence exit the loop
+	
+	FOR1C1:	
+		beq 	$t2, $t5, OUT1C1	# If all the lines was print then exit ryu print (90)
+
+	FOR2C1:	
+		beq 	$t3, 60, OUT2C1		# If all the columns was print then continue the outer loop (60)
+		
+		# sd (c1 * 320) + (c2 + x) -> lb
+		mult 	$t2, $t4	# (c1 * 320)
+		mflo	$t9		#
+		add	$s0, $t9, $t3	# (c1 * 320) + c2
+		add	$s0, $s0, $t6	# (c1 * 320) + (c2 + x)
+		add	$s1, $s0, $t1	# Add on char1's address on SSRAM
+		lb	$s2, 0($s1)
+		
+		# vga (y + c1)*320 + (x + c2) -> sb
+		add	$t9, $s6, $t2	# y + c1
+		mult	$t9, $t4	# (y + c1)*320
+		mflo	$s1		#
+		add	$s1, $s1, $s5	# (y + c1)*320 + x
+		add	$s3, $s1, $t3	# (y + c1)*320 + (x + c2)
+		add	$s4, $s3, $t0	# Add on VGA's address
+		
+		slti	$t9, $t6, 60
+		beq	$t9, $zero, GO_VGAC1
+		
+		GET_BUFFC1:
+			lb	$t7, 0($s4)	# Collect buffer behind character
+			sb	$t7, 0($s7)	# Save buffer on SRAM
+			add	$s7, $s7, 1 	# Increase SRAM's index
+		
+		GO_VGAC1:
+			sb	$s2, 0($s4)	# Print char on VGA
+
+		addi 	$t3, $t3, 1
+		
+		j 	FOR2C1
+		nop	
+		
+	OUT2C1:	
+		addi 	$t2, $t2, 1
+		move 	$t3, $zero
+		
+		j 	FOR1C1
+		nop	
+	OUT1C1:	
+		move 	$t2, $zero
+		addi 	$t6, $t6, 60		# Next char sequence
+				
+		j 	FOR0C1
+		nop
+	
+	OUT0C1:	
+		jr	$ra
+		nop
+
+	
+STAGE_SETUP:
+
+	li 	$t0, 60			# X coordinate
+	sw	$t0, 0($sp)		#
+	li 	$t1, 130		# Y coordinate
+	sw	$t1, 4($sp)		#
+	
+	beq	$a2, 1, LOAD_RYU
+	beq	$a2, 5, LOAD_KEN
+
+	j EXIT
+	nop
+
+LOAD_KEN:
+
+	la	$t1, KEN_S_BUFFER	# Ken stage address
+	jal	PRINT_VGA	
+	nop
+	nop
+	nop
+	
+	la	$t1, KEN_C_BUFFER	
+	sw	$t1, 40($sp)		
+	jal 	PRINT_CHAR1
+	nop
+	
+	j STAGE_LOOP
+	nop
+	
+LOAD_RYU:
+
+	la	$t1, RYU_S_BUFFER	# Ryu stage address
+	jal	PRINT_VGA	
+	nop
+	nop
+	nop
+	
+	la	$t1, RYU_C_BUFFER	
+	sw	$t1, 40($sp)		
+	jal 	PRINT_CHAR1
+	nop
+	
+	j STAGE_LOOP
+	nop
+	
+STAGE_LOOP:
+	
+	la	$t0, K1				# PS2 Keyboard Key1 
+	lw	$t1, 0($t0)			# get keymap 1
+	andi	$t2, $t1, LEFT1_K		# check if 'a' was pressed
+	beq	$t2, LEFT1_K, MOVE1_L		#
+	
+	la	$t0, K2				# PS2 Keyboard Key2 
+	lw	$t1, 0($t0)			# get keymap 2
+	andi	$t2, $t1, RIGHT1_K		# check if 'd' was pressed
+	beq	$t2, RIGHT1_K, MOVE1_R		# 
+	
+	la	$t1, CHAR1_BUFFER		# SRAM buffer address
+	lw	$s5, 0($sp)			# X coordinate
+	lw	$s6, 4($sp)			# Y coordinate
+	li 	$t5, 90				# Ryu height (y)
+	li 	$t6, 60				# Ryu height (x)
+	jal	CLEAN_PATH
+	nop
+
+	lw	$t1, 40($sp)				
+	jal 	PRINT_CHAR1
+	nop
 	
 	#la	$t1, CHAR2_BUFFER		# SRAM buffer address
 	#lw	$s5, 16($sp)			# X coordinate
@@ -572,23 +653,9 @@ MAIN_SELECT:
 	#jal 	PRINT_CHAR2
 	#nop
 	
-	j MAIN_SELECT
+	j STAGE_LOOP
 	nop
 	
-STAGE_SETUP:
-	beq	$a2, 1, LOAD_RYU
-
-	j EXIT
-	
-LOAD_RYU:
-
-	la	$t1, RYU_S_BUFFER	# Ryu stage address
-	jal	PRINT_VGA
-	
-	jal	SETUP_CHAR1		# Print char 1
-	nop	
-	
-	j EXIT
 	
 UPDATE_BOX_L2:
 
@@ -616,6 +683,7 @@ UPDATE_BOX_L2:
 	nop	
 
 	j MAIN_SELECT
+	nop
 
 	
 UPDATE_BOX_R2:
@@ -644,6 +712,7 @@ UPDATE_BOX_R2:
 	nop	
 
 	j MAIN_SELECT
+	nop
 	
 UPDATE_BOX_U2:
 
@@ -671,6 +740,7 @@ UPDATE_BOX_U2:
 	nop	
 
 	j MAIN_SELECT
+	nop
 
 	
 UPDATE_BOX_D2:
@@ -699,6 +769,7 @@ UPDATE_BOX_D2:
 	nop	
 
 	j MAIN_SELECT
+	nop
 
 UPDATE_BOX_L1:
 
@@ -728,6 +799,7 @@ UPDATE_BOX_L1:
 	nop	
 
 	j MAIN_SELECT
+	nop
 
 	
 UPDATE_BOX_R1:
@@ -758,6 +830,7 @@ UPDATE_BOX_R1:
 	nop	
 
 	j MAIN_SELECT
+	nop
 	
 UPDATE_BOX_U1:
 
@@ -787,6 +860,7 @@ UPDATE_BOX_U1:
 	nop	
 
 	j MAIN_SELECT
+	nop
 
 	
 UPDATE_BOX_D1:
@@ -817,11 +891,14 @@ UPDATE_BOX_D1:
 	nop	
 
 	j MAIN_SELECT
+	nop
 
 MOVE1_R:
 	la	$t1, CHAR1_BUFFER		# SRAM buffer address
 	lw	$s5, 0($sp)			# X coordinate
 	lw	$s6, 4($sp)			# Y coordinate
+	li 	$t5, 90				# Ryu height (y)
+	li 	$t6, 60				# Ryu height (x)
 	jal	CLEAN_PATH
 	nop
 	
@@ -829,16 +906,19 @@ MOVE1_R:
 	addi 	$t1, $t0, 5		# Add 20 steps when Ryu move to right
 	sw	$t1, 0($sp)		# X updated
 
+	lw	$t1, 40($sp)
 	jal	PRINT_CHAR1
 	nop	
 	
-	j	MAIN_COIN
+	j	STAGE_LOOP
 	nop
 
 MOVE1_L:
 	la	$t1, CHAR1_BUFFER		# SRAM buffer address
 	lw	$s5, 0($sp)			# X coordinate
 	lw	$s6, 4($sp)			# Y coordinate
+	li 	$t5, 90				# Ryu height (y)
+	li 	$t6, 60				# Ryu height (x)
 	jal	CLEAN_PATH
 	nop
 	
@@ -846,16 +926,19 @@ MOVE1_L:
 	addi 	$t1, $t0, -5		# Sub 20 steps when Ryu move to left
 	sw	$t1, 0($sp)		# X updated
 
+	lw	$t1, 40($sp)
 	jal	PRINT_CHAR1
 	nop	
 	
-	j	MAIN_COIN
+	j	STAGE_LOOP
 	nop
 	
 MOVE2_R:
 	la	$t1, CHAR2_BUFFER		# SRAM buffer address
 	lw	$s5, 16($sp)			# X coordinate
 	lw	$s6, 20($sp)			# Y coordinate
+	li 	$t5, 90				# Ryu height (y)
+	li 	$t6, 60				# Ryu height (x)
 	jal	CLEAN_PATH
 	nop
 	
@@ -873,6 +956,8 @@ MOVE2_L:
 	la	$t1, CHAR2_BUFFER		# SRAM buffer address
 	lw	$s5, 16($sp)			# X coordinate
 	lw	$s6, 20($sp)			# Y coordinate
+	li 	$t5, 90				# Ryu height (y)
+	li 	$t6, 60				# Ryu height (x)
 	jal	CLEAN_PATH
 	nop
 	
@@ -903,7 +988,7 @@ CLEAN_PATH:
 		mult 	$t2, $t6	# (c1 * 49)
 		mflo	$t9		#
 		add	$s0, $t9, $t3	# (c1 * 49) + c2
-		add	$s1, $s0, $t1	# Add on Ryu's address on SD card
+		add	$s1, $s0, $t1	# Add on char's address on SD card
 		lb	$s2, 0($s1)
 		
 		# vga (y + c1)*320 + (x + c2) -> sb
