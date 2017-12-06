@@ -29,6 +29,10 @@
 #	12($sp): Second char background buffer			#
 #	16($sp) : Player 2 X Coordinate				#
 #	20($sp) : Player 2 Y Coordinate				#
+#	24($sp) : Select box 1 X Coordinate			#
+#	28($sp) : Select box 1 Y Coordinate			#
+#	32($sp) : Select box 2 X Coordinate			#
+#	36($sp) : Select box 2 Y Coordinate			#
 #################################################################
 
 #################### MARS INTERFACE ADDRESSES ################### 
@@ -86,11 +90,9 @@
 .eqv ARCADE_BUFFER 0x1004D088		# SRAM address to keep the arcade menu's buffer
 .eqv VERSUS_BUFFER 0x1005FC88		# SRAM address to keep the versus menu's buffer
 .eqv SELECT_BUFFER 0x10072888		# SRAM address to keep the select char image's buffer
-.eqv S1_BUFFER	   0x10085488		# SRAM address to keep the select box 1's buffer
-.eqv S2_BUFFER	   0x10089AD8		# SRAM address to keep the select box 2's buffer
-.eqv S1_BACK_BUFF  0x1008E128
-.eqv S2_BACK_BUFF  0x10092778
-.eqv S12_BUFFER	   0x10096DC8		
+.eqv S1_BACK_BUFF  0x10085488		
+.eqv S2_BACK_BUFF  0x10089AD8		
+.eqv S12_BUFFER	   0x1008E128	
 
 ### MENU MAP ### 
 .eqv START1	  0x000A4000		# Insert coin menu 1
@@ -110,7 +112,7 @@
 .text
 
 INIT:
-	addi	$sp, $sp, -28 		# Init stack
+	addi	$sp, $sp, -44 		# Init stack
 	
 	jal 	LOAD_SD
 	nop
@@ -458,43 +460,49 @@ SELECT_SETUP:
 		
 	la	$s7, S1_BACK_BUFF	
 	li 	$s5, 80			# X coordinate
+	sw	$s5, 24($sp)	
 	li 	$s6, 145		# Y coordinate
+	sw	$s6, 28($sp)
 	li 	$t5, 50			# Select height (y)
 	li 	$t6, 0			# Select width (x)
 	jal 	PRINT_SELECT		
 	nop	
-			
+		
 	la	$s7, S2_BACK_BUFF
 	li 	$s5, 180		# X coordinate
+	sw	$s5, 32($sp)	
 	li 	$s6, 145		# Y coordinate	
+	sw	$s6, 36($sp)	
 	li 	$t5, 50			# Select height (y)
 	li 	$t6, 58			# Select width (x)
 	jal 	PRINT_SELECT			
-	nop
-	
-	j SELECT_SETUP
 	nop
 	
 MAIN_SELECT:
 	la	$t0, K1				# PS2 Keyboard Key1 
 	lw	$t1, 0($t0)			# get keymap 1
 	andi	$t2, $t1, LEFT1_K		# check if 'a' was pressed
-	#beq	$t2, LEFT1_K, UPDATE_BUFFER	# if 'a' was pressed than get key from buffer
+	beq	$t2, LEFT1_K, UPDATE_BOX_L1	#
 	
 	la	$t0, K2				# PS2 Keyboard Key2 
 	lw	$t1, 0($t0)			# get keymap 2
 	andi	$t2, $t1, RIGHT1_K		# check if 'd' was pressed
-	#beq	$t2, RIGHT1_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
+	beq	$t2, RIGHT1_K, UPDATE_BOX_R1	# 
 	
-	#la	$t0, K4				# PS2 Keyboard Key2 
-	#lw	$t1, 0($t0)			# get keymap 4
-	#andi	$t2, $t1, LEFT2_K		# check if '1' was pressed
-	#beq	$t2, LEFT2_K, UPDATE_BUFFER	# if '1' was pressed than get key from buffer
+	la	$t0, K4				# PS2 Keyboard Key2 
+	lw	$t1, 0($t0)			# get keymap 4
+	andi	$t2, $t1, LEFT2_K		# check if '1' was pressed
+	beq	$t2, LEFT2_K, UPDATE_BOX_L2	# if '1' was pressed than get key from buffer
 	
-	#la	$t0, K4				# PS2 Keyboard Key2 
-	#lw	$t1, 0($t0)			# get keymap 4
-	#andi	$t2, $t1, RIGHT2_K		# check if '3' was pressed
-	#beq	$t2, RIGHT2_K, UPDATE_BUFFER	# if '3' was pressed than get key from buffer
+	la	$t0, K4				# PS2 Keyboard Key2 
+	lw	$t1, 0($t0)			# get keymap 4
+	andi	$t2, $t1, RIGHT2_K		# check if '3' was pressed
+	beq	$t2, RIGHT2_K, UPDATE_BOX_R2	# if '3' was pressed than get key from buffer
+
+	la	$t0, K3				# PS2 Keyboard Key3 
+	lw	$t1, 0($t0)			# get keymap 3
+	andi	$t2, $t1, ENTER_K		# check if 'enter' was pressed
+	#beq	$t2, ENTER_K, SELECT_SETUP	#
 	
 	#la	$t1, CHAR1_BUFFER		# SRAM buffer address
 	#lw	$s5, 0($sp)			# X coordinate
@@ -516,6 +524,116 @@ MAIN_SELECT:
 	
 	j MAIN_SELECT
 	nop
+	
+UPDATE_BOX_L2:
+
+	lw	$s5, 32($sp)		# X coordinate
+	lw	$s6, 36($sp)		# Y coordinate
+
+	slti	$t8, $s5, 90
+	beq	$t8, 1, MAIN_SELECT
+
+	la	$t1, S2_BACK_BUFF	# SRAM buffer address
+	li 	$t5, 50			# Ryu height (y)
+	li 	$t6, 58			# Ryu height (y)
+	jal CLEAN_PATH
+	nop
+	
+	la	$t1, S12_BUFFER		
+	la	$s7, S2_BACK_BUFF		
+	lw	$s5, 32($sp)		# X coordinate
+	addi	$s5, $s5, -33
+	sw	$s5, 32($sp)		# X coordinate
+	lw	$s6, 36($sp)		# Y coordinate
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 58			# Select width (x)
+	jal 	PRINT_SELECT		
+	nop	
+
+	j MAIN_SELECT
+
+	
+UPDATE_BOX_R2:
+
+	lw	$s5, 32($sp)		# X coordinate
+	lw	$s6, 36($sp)		# Y coordinate
+	
+	sgt	$t8, $s5, 170
+	beq	$t8, 1, MAIN_SELECT
+
+	la	$t1, S2_BACK_BUFF	# SRAM buffer address
+	li 	$t5, 50			# Ryu height (y)
+	li 	$t6, 58			# Ryu height (y)
+	jal CLEAN_PATH
+	nop
+	
+	la	$t1, S12_BUFFER		
+	la	$s7, S2_BACK_BUFF		
+	lw	$s5, 32($sp)		# X coordinate
+	addi	$s5, $s5, 33
+	sw	$s5, 32($sp)		# X coordinate
+	lw	$s6, 36($sp)		# Y coordinate
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 58			# Select width (x)
+	jal 	PRINT_SELECT		
+	nop	
+
+	j MAIN_SELECT
+	
+UPDATE_BOX_L1:
+
+	lw	$s5, 24($sp)		# X coordinate
+	lw	$s6, 28($sp)		# Y coordinate
+	
+	slti	$t8, $s5, 81
+	beq	$t8, 1, MAIN_SELECT
+	
+	la	$t1, S1_BACK_BUFF	# SRAM buffer address
+	li 	$t5, 50			# Ryu height (y)
+	li 	$t6, 58			# Ryu height (y)
+	jal CLEAN_PATH
+	nop
+	
+	la	$t1, S12_BUFFER		
+	la	$s7, S1_BACK_BUFF		
+	lw	$s5, 24($sp)		# X coordinate
+	addi	$s5, $s5, -33
+	sw	$s5, 24($sp)	
+	lw	$s6, 28($sp)		# Y coordinate
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 0			# Select width (x)
+	jal 	PRINT_SELECT		
+	nop	
+
+	j MAIN_SELECT
+
+	
+UPDATE_BOX_R1:
+
+	lw	$s5, 24($sp)		# X coordinate
+	lw	$s6, 28($sp)		# Y coordinate
+	
+	sgt	$t8, $s5, 170
+	beq	$t8, 1, MAIN_SELECT
+	
+	la	$t1, S1_BACK_BUFF	# SRAM buffer address
+	li 	$t5, 50			# Ryu height (y)
+	li 	$t6, 58			# Ryu height (y)
+	jal CLEAN_PATH
+	nop
+	
+	la	$t1, S12_BUFFER		
+	la	$s7, S1_BACK_BUFF		
+	lw	$s5, 24($sp)		# X coordinate
+	addi	$s5, $s5, 33
+	sw	$s5, 24($sp)		# X coordinate
+	lw	$s6, 28($sp)		# Y coordinate
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 0			# Select width (x)
+	jal 	PRINT_SELECT		
+	nop	
+
+	j MAIN_SELECT
 
 MOVE1_R:
 	la	$t1, CHAR1_BUFFER		# SRAM buffer address
@@ -592,9 +710,6 @@ CLEAN_PATH:
 	move 	$t3, $zero		# Second counter (c2) to print char
 	li 	$t4, 320		# Size of the screen
 	
-	li 	$t5, 90			# Ryu height (y)
-	li 	$t6, 60			# Ryu width (x)
-	
 	FOR11:	
 		beq 	$t2, $t5, OUT11	# If all the lines was print then exit ryu print (92)
 
@@ -634,22 +749,13 @@ CLEAN_PATH:
 		nop	
 	
 PRINT_SELECT:
-	#li 	$t0, 148		# X coordinate
-	#sw	$t0, 0($sp)		#
-	#li 	$t1, 80			# Y coordinate
-	#sw	$t1, 4($sp)		#
-	
 	la	$t0, VGA_INI_ADDR	# VGA initial address
-	#sw	$s7, 8($sp)		#
 	
 	move 	$t2, $zero		# First counter (c1) to print char
 	move 	$t3, $zero		# Second counter (c2) to print char
 	
 	li 	$t4, 320		# Size of the screen
-	
-	#lw	$s5, 0($sp)		# X coordinate
-	#lw	$s6, 4($sp)		# Y coordinate
-	
+
 	FOR1S1:	
 		beq 	$t2, $t5, OUT1S1	# If all the lines was print then exit ryu print (50)
 
@@ -672,11 +778,11 @@ PRINT_SELECT:
 		add	$s3, $s1, $t3	# (y + c1)*320 + (x + c2)
 		add	$s4, $s3, $t0	# Add on VGA's address
 		
-		lb	$t7, 0($s4)	# Collect buffer behind select
+		lb	$t7, 0($s4)	# Collect buffer behind character
 		sb	$t7, 0($s7)	# Save buffer on SRAM
 		add	$s7, $s7, 1 	# Increase SRAM's index
-
-		sb	$s2, 0($s4)	# Print select on VGA
+		
+		sb	$s2, 0($s4)	# Print char on VGA
 
 		addi 	$t3, $t3, 1
 		
