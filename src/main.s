@@ -50,6 +50,9 @@
 .eqv RIGHT2	0x7A000000		# '3' RIGHT
 .eqv RIGHT2_K	0x04000000		# '3' RIGHT KEY
 
+.eqv ENTER	0x5A000000		# 'enter' 
+.eqv ENTER_K	0x04000000		# 'enter' key
+
 .eqv DOWN	0x1B000000		# 's' DOWN
 .eqv UP		0x1D000000		# 'w' UP
 .eqv L_PUNCH	0x34000000		# 'g' LIGHT PUNCH
@@ -59,7 +62,6 @@
 .eqv M_KICK	0x31000000		# 'n' MEDIUM KICK
 .eqv H_KICK	0x3A000000		# 'm' HEAVY KICK
 .eqv THROW	0x42000000		# 'k' THROW
-.eqv ENTER	0x44000000		# 'o' ENTER
 .eqv BACK	0x4D000000		# 'p' BACK
 
 ### VGA MAP ### 
@@ -76,6 +78,14 @@
 .eqv USER_DATA     0x10012000		# SRAM address to load char from SD 
 .eqv CHAR1_BUFFER  0x1003B400		# SRAM address to keep the first char's buffer
 .eqv CHAR2_BUFFER  0x10064800		# SRAM address to keep the second char's buffer
+.eqv START1_BUFFER 0x100DB000		# SRAM address to keep the first image's buffer
+.eqv START2_BUFFER 0x10151800		# SRAM address to keep the second image's buffer
+.eqv SELECT_BUFFER 0x101C8000
+
+### MENU MAP ### 
+.eqv START1	  0x00054E00		# Init image 1
+.eqv START2	  0x00068E00		# Init image 2
+.eqv SELECT	  0x00150E00
 
 ### CHARACTERS MAP ### 
 .eqv RYU_STAGE	  0x00088E00		# Ryu's stage sd address
@@ -85,23 +95,53 @@
 .text
 
 INIT:
-	addi	$sp, $sp, -24 		# Init stack
+	addi	$sp, $sp, -28 		# Init stack
 	
-	jal 	SETUP_STAGE			# Stage setup
-	nop	
+	jal 	LOAD_SD
+	nop
+	# la	$a0, RYU_STAGE		# Stages address
+	#jal 	SETUP_STAGE		# Stage setup
+	#nop	
 	
-	jal	SETUP_CHAR1		# Print char 1
-	nop	
+	#jal	SETUP_CHAR1		# Print char 1
+	#nop	
 	
-	jal	SETUP_CHAR2		# Print char 2
-	nop	
+	#jal	SETUP_CHAR2		# Print char 2
+	#nop	
 	
-	j 	MAIN			# Main logic
+	j 	MAIN_COIN		# Main logic
 	nop		
 	
 	j 	EXIT
 	nop
 
+LOAD_SD:
+	la	$a0, START1
+	la	$a1, START1_BUFFER	# Destiny of the address to read from SD card 
+	li	$a2, VGA_QTD_BYTE	# Bytes size to read
+	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+	
+	la	$a0, START2
+	la	$a1, START2_BUFFER	# Destiny of the address to read from SD card 
+	li	$a2, VGA_QTD_BYTE	# Bytes size to read
+	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+	
+	la	$a0, SELECT
+	la	$a1, SELECT_BUFFER	# Destiny of the address to read from SD card 
+	li	$a2, VGA_QTD_BYTE	# Bytes size to read
+	
+	li	$v0, 49			# SYSCALL 49 - read from sd card 
+	syscall				#
+	nop
+	
+	jr $ra
+	
 SETUP_CHAR2:	
 	li 	$t0, 210		# X coordinate
 	sw	$t0, 16($sp)		#
@@ -281,19 +321,11 @@ PRINT_CHAR1:
 		jr	$ra
 		nop
 
-SETUP_STAGE:		 
-	la	$a0, RYU_STAGE		# Stages address
-	la	$a1, USER_DATA		# Destiny of the address to read SD card 
+PRINT_VGA:
+	la	$t0, VGA_INI_ADDR	# Reset vga and sram addresses
+					# Loop to print on screen
 	li	$a2, VGA_QTD_BYTE	# Bytes size to read
 	
-	li	$v0, 49			# SYSCALL 49 - read from sd card 
-	syscall				#
-	nop
-	
-	la	$t0, VGA_INI_ADDR	# Reset vga and sram addresses
-	la	$t1, USER_DATA		#
-	
-PRINT_STAGE:				# Loop to print on screen
 	WRITE_VGA:			#
  		lw	$t2, ($t1)	#
 		sw	$t2, ($t0)	#
@@ -307,13 +339,6 @@ PRINT_STAGE:				# Loop to print on screen
 	jr	$ra
 	nop
 
-UPDATE_BUFFER:
-	la 	$t0, KB1		# get key from buffer
-	lw	$t1, 0($t0)		#
-	
-	sll 	$a0, $t1, 24		# shift 24 bits left on the buffer
-					# in case the buffer is full
-
 CONTROL:
 	beq 	$a0, LEFT1, 	MOVE1_L	# test if 'a' was pressed
 	beq 	$a0, LEFT2, 	MOVE2_L	# test if '1' was pressed
@@ -326,7 +351,38 @@ CONTROL:
 	beq 	$a0, ENTER, 	EXIT	# test if 'o' was pressed
 	beq 	$a0, BACK, 	EXIT	# test if 'p' was pressed
 	
-MAIN:
+UPDATE_BUFFER:
+	la 	$t0, KB1			# get key from buffer
+	lw	$t1, 0($t0)			#
+	
+	sll 	$a0, $t1, 24			# shift 24 bits left on the buffer
+						# in case the buffer is full
+					
+	beq 	$a0, ENTER, SELECT_SETUP	# test if 'enter' was pressed
+	
+MAIN_COIN:
+	la	$t0, K3				# PS2 Keyboard Key3 
+	lw	$t1, 0($t0)			# get keymap 3
+	andi	$t2, $t1, ENTER_K		# check if 'enter' was pressed
+	beq	$t2, ENTER_K, UPDATE_BUFFER	# if 'ebter' was pressed than get key from buffer
+	
+	la	$t1, START1_BUFFER		# Menu start address
+	jal 	PRINT_VGA			# Start game
+	nop
+	
+	la	$t1, START2_BUFFER		# Menu start address
+	jal 	PRINT_VGA			# Start game
+	nop
+	
+	j MAIN_COIN
+	nop
+	
+SELECT_SETUP:
+	la	$t1, SELECT_BUFFER		# Menu start address
+	jal 	PRINT_VGA			# Start game
+	nop
+	
+MAIN_SELECT:
 	la	$t0, K1				# PS2 Keyboard Key1 
 	lw	$t1, 0($t0)			# get keymap 1
 	andi	$t2, $t1, LEFT1_K		# check if 'a' was pressed
@@ -346,26 +402,26 @@ MAIN:
 	lw	$t1, 0($t0)			# get keymap 4
 	andi	$t2, $t1, RIGHT2_K		# check if '3' was pressed
 	beq	$t2, RIGHT2_K, UPDATE_BUFFER	# if '3' was pressed than get key from buffer
-		
-	la	$t1, CHAR1_BUFFER		# SRAM buffer address
-	lw	$s5, 0($sp)			# X coordinate
-	lw	$s6, 4($sp)			# Y coordinate
-	jal	CLEAN_PATH
-	nop
-			
-	jal 	PRINT_CHAR1
-	nop
 	
-	la	$t1, CHAR2_BUFFER		# SRAM buffer address
-	lw	$s5, 16($sp)			# X coordinate
-	lw	$s6, 20($sp)			# Y coordinate
-	jal 	CLEAN_PATH
-	nop
+	#la	$t1, CHAR1_BUFFER		# SRAM buffer address
+	#lw	$s5, 0($sp)			# X coordinate
+	#lw	$s6, 4($sp)			# Y coordinate
+	#jal	CLEAN_PATH
+	#nop
 			
-	jal 	PRINT_CHAR2
-	nop
+	#jal 	PRINT_CHAR1
+	#nop
 	
-	j MAIN
+	#la	$t1, CHAR2_BUFFER		# SRAM buffer address
+	#lw	$s5, 16($sp)			# X coordinate
+	#lw	$s6, 20($sp)			# Y coordinate
+	#jal 	CLEAN_PATH
+	#nop
+			
+	#jal 	PRINT_CHAR2
+	#nop
+	
+	j MAIN_SELECT
 	nop
 
 MOVE1_R:
@@ -382,7 +438,7 @@ MOVE1_R:
 	jal	PRINT_CHAR1
 	nop	
 	
-	j	MAIN
+	j	MAIN_COIN
 	nop
 
 MOVE1_L:
@@ -399,7 +455,7 @@ MOVE1_L:
 	jal	PRINT_CHAR1
 	nop	
 	
-	j	MAIN
+	j	MAIN_COIN
 	nop
 	
 MOVE2_R:
@@ -416,7 +472,7 @@ MOVE2_R:
 	jal	PRINT_CHAR2
 	nop	
 	
-	j	MAIN
+	j	MAIN_COIN
 	nop
 
 MOVE2_L:
@@ -433,7 +489,7 @@ MOVE2_L:
 	jal	PRINT_CHAR2
 	nop	
 	
-	j	MAIN
+	j	MAIN_COIN
 	nop
 	
 CLEAN_PATH:
