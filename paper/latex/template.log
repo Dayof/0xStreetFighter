@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.9.29)  5 DEC 2017 16:28
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.9.29)  6 DEC 2017 12:23
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -515,120 +515,191 @@ G,.JBIG2,.JB2,.eps]
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-LaTeX Font Info:    Try loading font information for OT1+phv on input line 93.
+LaTeX Font Info:    Try loading font information for OT1+phv on input line 88.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1phv.fd
 File: ot1phv.fd 2001/06/04 scalable font definitions for OT1/phv.
 )
 LaTeX Font Info:    Font shape `OT1/phv/bx/n' in size <14.4> not available
-(Font)              Font shape `OT1/phv/b/n' tried instead on input line 93.
-LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 93
+(Font)              Font shape `OT1/phv/b/n' tried instead on input line 88.
+LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 88
 .
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
 File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 93
+LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 88
 .
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/omlztmcm.fd
 File: omlztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for OMS+ztmcm on input line 93
+LaTeX Font Info:    Try loading font information for OMS+ztmcm on input line 88
 .
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/omsztmcm.fd
 File: omsztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for OMX+ztmcm on input line 93
+LaTeX Font Info:    Try loading font information for OMX+ztmcm on input line 88
 .
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/omxztmcm.fd
 File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 93.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 88.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 93.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 88.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 93.
-LaTeX Font Info:    Try loading font information for OMS+ptm on input line 93.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 88.
+LaTeX Font Info:    Try loading font information for OMS+ptm on input line 88.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/omsptm.fd
 File: omsptm.fd 
 )
 LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <7.4> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 93.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 88.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 93.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 88.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 93.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 88.
 
 <street-fighter.jpg, id=1, 1284.8pt x 963.6pt>
 File: street-fighter.jpg Graphic file (type jpg)
  <use street-fighter.jpg>
-Package pdftex.def Info: street-fighter.jpg used on input line 93.
+Package pdftex.def Info: street-fighter.jpg used on input line 88.
 (pdftex.def)             Requested size: 144.54pt x 108.39296pt.
 LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <6> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 93.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 88.
 LaTeX Font Info:    Font shape `OT1/phv/bx/n' in size <9> not available
-(Font)              Font shape `OT1/phv/b/n' tried instead on input line 93.
+(Font)              Font shape `OT1/phv/b/n' tried instead on input line 88.
 LaTeX Font Info:    Font shape `OT1/phv/bx/sc' in size <9> not available
-(Font)              Font shape `OT1/phv/b/sc' tried instead on input line 93.
+(Font)              Font shape `OT1/phv/b/sc' tried instead on input line 88.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 93.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 88.
 
-Underfull \hbox (badness 1168) in paragraph at lines 93--93
+Underfull \hbox (badness 1168) in paragraph at lines 88--88
 \OT1/ptm/b/n/9 Keywords: \OT1/ptm/m/n/9 Street Fighter 2, Mi-cro-pro-ces-sador 
 MIPS, MIPS
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 98--99
-
- []
-
-
-Underfull \hbox (badness 1406) in paragraph at lines 100--101
+Underfull \hbox (badness 1406) in paragraph at lines 95--96
 []\OT1/ptm/m/n/9 Para o de-sen-volvi-mento do pro-jeto, os alunos pre-cis-ariam
 
  []
 
 
-Underfull \hbox (badness 1609) in paragraph at lines 100--101
-\OT1/ptm/m/n/9 os es-tu-dantes pre-cisavam usar o pro-ces-sador MIPS Pipeline,
+LaTeX Warning: Citation `ware:2004:IVP' on page 1 undefined on input line 104.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 104--105
+[]\OT1/ptm/m/n/9 Como ex-plic-i-tado no livro Organiza[][]ao e Pro-jeto de
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 100--101
+Underfull \hbox (badness 5189) in paragraph at lines 104--105
+\OT1/ptm/m/n/9 Computadores[[]], dos au-tores David A. Pat-ter-son e John
+ []
 
+<pipeline.jpg, id=2, 1343.0175pt x 955.57pt>
+File: pipeline.jpg Graphic file (type jpg)
+ <use pipeline.jpg>
+Package pdftex.def Info: pipeline.jpg used on input line 108.
+(pdftex.def)             Requested size: 199.4648pt x 141.91498pt.
+ [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+
+
+ <./street-fighter.jpg> <./pipeline.jpg>] <altera.jpg, id=14, 2209.08896pt x 13
+95.78178pt>
+File: altera.jpg Graphic file (type jpg)
+ <use altera.jpg>
+Package pdftex.def Info: altera.jpg used on input line 124.
+(pdftex.def)             Requested size: 199.4648pt x 126.01959pt.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 132.
+LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <9> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 136.
+
+Underfull \hbox (badness 10000) in paragraph at lines 136--137
+[]\OT1/ptm/m/n/9 SDINTERFACEADDR: Re-cebe o endere[]o f[]^^Psico de
+ []
+
+<register.jpg, id=15, 730.73pt x 548.0475pt>
+File: register.jpg Graphic file (type jpg)
+ <use register.jpg>
+Package pdftex.def Info: register.jpg used on input line 153.
+(pdftex.def)             Requested size: 144.54pt x 108.40335pt.
+
+<assembly.png, id=16, 1401.235pt x 1289.81876pt>
+File: assembly.png Graphic file (type png)
+ <use assembly.png>
+Package pdftex.def Info: assembly.png used on input line 170.
+(pdftex.def)             Requested size: 199.4648pt x 183.60426pt.
+ [2 <./altera.jpg> <./register.jpg> <./assembly.png>]
+<abertura.png, id=25, 240.9pt x 180.675pt>
+File: abertura.png Graphic file (type png)
+ <use abertura.png>
+Package pdftex.def Info: abertura.png used on input line 220.
+(pdftex.def)             Requested size: 180.67499pt x 135.50865pt.
+
+<versus.png, id=26, 321.2pt x 240.9pt>
+File: versus.png Graphic file (type png)
+ <use versus.png>
+Package pdftex.def Info: versus.png used on input line 226.
+(pdftex.def)             Requested size: 180.67499pt x 135.50958pt.
+
+<select_vs.png, id=27, 321.2pt x 240.9pt>
+File: select_vs.png Graphic file (type png)
+ <use select_vs.png>
+Package pdftex.def Info: select_vs.png used on input line 232.
+(pdftex.def)             Requested size: 180.67499pt x 135.50958pt.
+
+<ken_battle.png, id=28, 240.9pt x 180.675pt>
+File: ken_battle.png Graphic file (type png)
+ <use ken_battle.png>
+Package pdftex.def Info: ken_battle.png used on input line 238.
+(pdftex.def)             Requested size: 180.67499pt x 135.50865pt.
+ [3 <./abertura.png> <./versus.png> <./select_vs.png (PNG copy)>]
+Underfull \hbox (badness 5637) in paragraph at lines 257--258
+[]\OT1/ptm/m/n/9 Utiliza[][]ao da FPULA para uma mel-hor pre-cis[]ao na
+ []
+
+
+Overfull \hbox (25.22pt too wide) in paragraph at lines 269--270
+\OT1/ptm/m/n/9 <http://web.cs.iastate.edu/ prabhu/Tutorial/PIPELINE/hazards.htm
+l>.
  []
 
 No file template.bbl.
-[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+[4
 
+ <./ken_battle.png>] (./template.aux)
 
- <./street-fighter.jpg>]
-(./template.aux) ) 
+LaTeX Warning: There were undefined references.
+
+ ) 
 Here is how much of TeX's memory you used:
- 2593 strings out of 493029
- 34725 string characters out of 6136234
- 105886 words of memory out of 5000000
- 6061 multiletter control sequences out of 15000+600000
- 36917 words of font info for 72 fonts, out of 8000000 for 9000
+ 2663 strings out of 493029
+ 35692 string characters out of 6136234
+ 111775 words of memory out of 5000000
+ 6115 multiletter control sequences out of 15000+600000
+ 45801 words of font info for 90 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 38i,12n,23p,537b,345s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</
-usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/sha
-re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texl
-ive/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/share/texlive/texmf-di
-st/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/typ
-e1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/ut
-mr8a.pfb>
-Output written on template.pdf (1 page, 149848 bytes).
+ 38i,12n,23p,603b,345s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texliv
+e/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/share/texlive/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/t
+ype1/public/amsfonts/cm/cmsy9.pfb></usr/share/texlive/texmf-dist/fonts/type1/ur
+w/helvetic/uhvb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/u
+hvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr
+/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/
+texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on template.pdf (4 pages, 1372095 bytes).
 PDF statistics:
- 34 PDF objects out of 1000 (max. 8388607)
- 23 compressed objects within 1 object stream
+ 68 PDF objects out of 1000 (max. 8388607)
+ 39 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 46 words of extra memory for PDF output out of 10000 (max. 10000000)
 
