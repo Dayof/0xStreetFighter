@@ -33,8 +33,10 @@
 #	28($sp) : Select box 1 Y Coordinate			#
 #	32($sp) : Select box 2 X Coordinate			#
 #	36($sp) : Select box 2 Y Coordinate			#
-#	40($sp) : P1 char address				#
-#	44($sp) : P2 char address				#
+#	40($sp) : P1 stage address				#
+#	44($sp) : P1 char address				#
+#	48($sp) : P2 char address				#
+#	52-72($sp) : Music logic				#
 #################################################################
 
 #################### MARS INTERFACE ADDRESSES ################### 
@@ -145,18 +147,66 @@
 
 .eqv CHAR_QTD 	  29400			# Ryu's bytes size (72D8)
 
+## MUSIC ##
+.data
+
+	QTDNOTAS:	.word 130
+	DELAY:		.word 96, 96, 96, 960, 192, 192, 192, 576, 96, 96, 384, 384, 960, 192, 192, 192, 384, 672, 96, 192, 192, 96, 192, 864, 192, 192, 96, 192, 864, 384, 960, 192, 192, 192, 384, 576, 384, 192, 960, 192, 192, 192, 960, 192, 96, 384, 288, 192, 192, 288, 480, 960, 192, 192, 192, 960, 192, 96, 288, 288, 288, 192, 288, 288, 192, 1920, 384, 288, 96, 96, 192, 480, 384, 288, 96, 96, 192, 192, 96, 960, 192, 192, 96, 96, 96, 1632, 384, 288, 96, 96, 192, 480, 384, 288, 96, 96, 192, 192, 96, 768, 192, 192, 192, 384, 576, 192, 192, 192, 96, 192, 5664, 96, 96, 960, 192, 192, 192, 576, 96, 96, 384, 384, 960, 192, 192, 192, 384, 672, 96, 192,
+
+	NOTAS:		.word 71, 74, 76, 76, 78, 79, 81, 79, 78, 79, 76, 78, 79, 81, 76, 74, 84, 83, 81, 79, 78, 76, 76, 78, 79, 83, 81, 81, 79, 78, 79, 81, 83, 84, 83, 81, 83, 79, 76, 78, 79, 81, 79, 78, 71, 76, 78, 79, 81, 83, 79, 76, 78, 79, 81, 83, 84, 83, 83, 81, 79, 78, 77, 76, 75, 71, 78, 79, 81, 83, 79, 71, 78, 79, 81, 83, 79, 78, 76, 78, 79, 81, 79, 78, 71, 71, 78, 79, 81, 83, 79, 71, 78, 79, 81, 83, 79, 78, 76, 78, 79, 81, 72, 83, 81, 79, 78, 78, 76, 76, 71, 74, 76, 76, 78, 79, 81, 79, 78, 79, 76, 78, 79, 81, 76, 74, 84, 83, 81, 79
+
+	DURACAO:	.word 96, 96, 960, 192, 192, 192, 576, 96, 96, 384, 384, 960, 192, 192, 192, 384, 576, 96, 192, 192, 96, 96, 864, 192, 192, 96, 96, 864, 384, 960, 192, 192, 192, 384, 576, 384, 192, 960, 192, 192, 192, 960, 192, 96, 96, 192, 192, 192, 288, 480, 960, 192, 192, 192, 960, 192, 96, 96, 288, 288, 192, 288, 288, 192, 1536, 384, 288, 96, 96, 96, 480, 384, 288, 96, 96, 96, 192, 96, 960, 192, 192, 96, 96, 96, 1248, 384, 288, 96, 96, 96, 480, 384, 288, 96, 96, 96, 192, 96, 768, 192, 192, 192, 384, 576, 192, 192, 192, 96, 96, 864, 96, 96, 960, 192, 192, 192, 576, 96, 96, 384, 384, 960, 192, 192, 192, 384, 576, 96, 192, 192
+
 .text
 
 INIT:
-	addi	$sp, $sp, -52 		# Init stack
+	addi	$sp, $sp, -76 		# Init stack
 	
 	jal 	LOAD_SD
 	nop
 
+	jal 	PRIMEIRA_NOTA
+	nop
+	
 	j 	MAIN_COIN		# Main logic
 	nop		
 	
 	j 	EXIT
+	nop
+	
+PRIMEIRA_NOTA:
+
+	la $t0, DELAY				#bota delay na pilha
+	nop
+	lw $t1, 0 ($t0)
+	nop
+	sw $t1, 52($sp) 		#valor do delay na pilha
+	nop
+	sw $t0, 56($sp)			#endereço do delay na pilha
+
+	la $t1, NOTAS				#le a NOTA
+	nop
+	lw $a0, 0 ($t1)
+	nop
+	sw $t1, 60($sp)			#endereço da NOTA na pos 32
+
+	la $t2, DURACAO			#lea a duracao
+	nop
+	lw $a1, 0 ($t2)
+	nop
+	sw $t2, 64($sp)			#endereço de DURACAO na pos 36
+
+	li $t0, 4
+	sw $t0, 68($sp)
+
+	li $a2, 24					# instrumento (parece que a placa não diferencia esses valores)
+	li $a3, 50					# volume
+
+	li $v0, 31					# toca a nota
+	syscall
+	nop
+
+	jr $ra
 	nop
 
 LOAD_SD:
@@ -574,7 +624,10 @@ SETUP_STAGE_LOOP:
 	jal 	PRINT_CHAR2
 	nop
 	
+	move 	$t8, $zero
+	
 STAGE_LOOP:
+	addi 	$t8,$t8, 1
 	
 	la	$t0, K1				# PS2 Keyboard Key1 
 	lw	$t1, 0($t0)			# get keymap 1
@@ -620,19 +673,69 @@ STAGE_LOOP:
 	jal 	PRINT_CHAR2
 	nop
 	
-	j STAGE_LOOP
+	lw 	$t3, 52($sp)
+	nop
+
+	jal 	MUSICA
+	nop
+	li 	$t8, 0
+
+PULA:
+	j 	STAGE_LOOP
+	nop
+
+MUSICA:
+	sw 	$ra, 72($sp)		# salva endereco de retorno da musica #retorno de RA
+
+    	lw 	$t2, 68($sp)		# carrega o contador em bytes do vetor de notas # flag
+
+	lw 	$t0, 56($sp)   		#le o endereço do delay
+	add 	$t0, $t0, 4		#soma 4 ao endereço
+	lw 	$t1, 0($t0)		#pega na memoria o valor do proximo endereço
+	sw 	$t1, 52($sp)		#sobrescreve o delay antigo
+	sw 	$t0, 56($sp)		# salvou o proximo endereço do delay
+
+	lw 	$t0, 60($sp)		#endereço da nota
+	add 	$t0, $t0, 4		#soma 4 ao end da NOTA
+	lw 	$a0, 0($t0)		#carrega o valor da nota p/ o syscall
+	sw 	$t0, 60($sp)		# salvou o proximo endereço do delay
+
+	lw 	$t0, 64($sp)		#endereço da ducaracao
+	add 	$t0, $t0, 4		#soma 4 ao end da ducaracao
+	lw 	$a1, 0($t0)		#carrega o valor da nota p/ o syscall
+	sw 	$t0, 64($sp)		# salvou o proximo endereço do delay
+
+	li 	$a2, 24			# instrumento (parece que a placa não diferencia esses valores)
+	li 	$a3, 50			# volume
+
+	li 	$v0, 31			# toca a nota
+	syscall
+	nop
+
+	add 	$t2, $t2, 4		# adiciona 4 bytes ao contador do vetor de notas
+	beq 	$t2, 516, faz		# if ( t2 == 516) faz
+	sw 	$t2, 68($sp)		# else -- salva t2 "o valor atualizado do contador do vetor de notas"
+	j 	fimFaz
 	nop
 	
+    faz:
+	jal 	PRIMEIRA_NOTA  		# reseta a musica
+	nop
+ 	
+ 	fimFaz:
+		lw 	$ra, 72($sp)	# devolve o endereco de retorno da musica
+		jr 	$ra
+		nop
 	
 UPDATE_BOX_L2:
-
-	addi	$a1, $a1, -1
 
 	lw	$s5, 32($sp)		# X coordinate
 	lw	$s6, 36($sp)		# Y coordinate
 
 	slti	$t8, $s5, 90
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a1, $a1, -1
 
 	la	$t1, S2_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -657,13 +760,13 @@ UPDATE_BOX_L2:
 	
 UPDATE_BOX_R2:
 
-	addi	$a1, $a1, 1
-
 	lw	$s5, 32($sp)		# X coordinate
 	lw	$s6, 36($sp)		# Y coordinate
 	
 	sgt	$t8, $s5, 170
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a1, $a1, 1
 
 	la	$t1, S2_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -687,13 +790,13 @@ UPDATE_BOX_R2:
 	
 UPDATE_BOX_U2:
 
-	addi	$a1, $a1, -4
-
 	lw	$s5, 32($sp)		# X coordinate
 	lw	$s6, 36($sp)		# Y coordinate
 	
 	slti	$t8, $s6, 160
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a1, $a1, -4
 	
 	la	$t1, S2_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -718,13 +821,13 @@ UPDATE_BOX_U2:
 	
 UPDATE_BOX_D2:
 
-	addi	$a1, $a1, 4
-
 	lw	$s5, 32($sp)		# X coordinate
 	lw	$s6, 36($sp)		# Y coordinate
 	
 	sgt	$t8, $s6, 170
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a1, $a1, 4
 	
 	la	$t1, S2_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -747,14 +850,14 @@ UPDATE_BOX_D2:
 	nop
 
 UPDATE_BOX_L1:
-
-	addi	$a2, $a2, -1
 		
 	lw	$s5, 24($sp)		# X coordinate
 	lw	$s6, 28($sp)		# Y coordinate
 	
 	slti	$t8, $s5, 81
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a2, $a2, -1
 	
 	la	$t1, S1_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -778,14 +881,14 @@ UPDATE_BOX_L1:
 
 	
 UPDATE_BOX_R1:
-
-	addi	$a2, $a2, 1
 	
 	lw	$s5, 24($sp)		# X coordinate
 	lw	$s6, 28($sp)		# Y coordinate
 	
 	sgt	$t8, $s5, 170
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a2, $a2, 1
 	
 	la	$t1, S1_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -809,13 +912,13 @@ UPDATE_BOX_R1:
 	
 UPDATE_BOX_U1:
 
-	addi	$a2, $a2, -4
-
 	lw	$s5, 24($sp)		# X coordinate
 	lw	$s6, 28($sp)		# Y coordinate
 	
 	slti	$t8, $s6, 160
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a2, $a2, -4
 	
 	la	$t1, S1_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
@@ -840,13 +943,13 @@ UPDATE_BOX_U1:
 	
 UPDATE_BOX_D1:
 
-	addi	$a2, $a2, 4
-
 	lw	$s5, 24($sp)		# X coordinate
 	lw	$s6, 28($sp)		# Y coordinate
 	
 	sgt	$t8, $s6, 170
 	beq	$t8, 1, MAIN_SELECT
+	
+	addi	$a2, $a2, 4
 	
 	la	$t1, S1_BACK_BUFF	# SRAM buffer address
 	li 	$t5, 50			# Ryu height (y)
