@@ -59,6 +59,11 @@
 .eqv UP1	0x1D000000		# 'w' UP
 .eqv UP1_K	0x20000000		# 'w' UP
 
+.eqv DOWN2	0x72000000		# '2' DOWN
+.eqv DOWN2_K	0x00040000		# '2' DOWN
+.eqv UP2	0x73000000		# '5' UP
+.eqv UP2_K	0x00080000		# '5' UP
+
 .eqv ENTER	0x5A000000		# 'enter' 
 .eqv ENTER_K	0x04000000		# 'enter' key
 
@@ -385,18 +390,6 @@ PRINT_VGA:
 
 	jr	$ra
 	nop
-
-CONTROL:
-	beq 	$a0, LEFT1, 	MOVE1_L	# test if 'a' was pressed
-	beq 	$a0, LEFT2, 	MOVE2_L	# test if '1' was pressed
-	beq 	$a0, DOWN1, 	EXIT	# test if 's' was pressed
-	beq 	$a0, RIGHT1, 	MOVE1_R	# test if 'd' was pressed
-	beq 	$a0, RIGHT2, 	MOVE2_R	# test if 'd' was pressed
-	beq 	$a0, UP1, 	EXIT	# test if 'w' was pressed
-	beq 	$a0, L_PUNCH, 	EXIT	# test if 'g' was pressed
-	beq 	$a0, L_KICK, 	EXIT	# test if 'b' was pressed
-	beq 	$a0, ENTER, 	EXIT	# test if 'o' was pressed
-	beq 	$a0, BACK, 	EXIT	# test if 'p' was pressed
 	
 MAIN_COIN:
 	la	$t0, K3				# PS2 Keyboard Key3 
@@ -489,15 +482,35 @@ MAIN_SELECT:
 	andi	$t2, $t1, RIGHT1_K		# check if 'd' was pressed
 	beq	$t2, RIGHT1_K, UPDATE_BOX_R1	# 
 	
+	la	$t0, K1				# PS2 Keyboard Key1 
+	lw	$t1, 0($t0)			# get keymap 1
+	andi	$t2, $t1, UP1_K			# check if 'w' was pressed
+	beq	$t2, UP1_K, UPDATE_BOX_U1	#
+	
+	la	$t0, K1				# PS2 Keyboard Key2 
+	lw	$t1, 0($t0)			# get keymap 2
+	andi	$t2, $t1, DOWN1_K		# check if 's' was pressed
+	beq	$t2, DOWN1_K, UPDATE_BOX_D1	# 
+	
 	la	$t0, K4				# PS2 Keyboard Key2 
 	lw	$t1, 0($t0)			# get keymap 4
 	andi	$t2, $t1, LEFT2_K		# check if '1' was pressed
-	beq	$t2, LEFT2_K, UPDATE_BOX_L2	# if '1' was pressed than get key from buffer
+	beq	$t2, LEFT2_K, UPDATE_BOX_L2	# 
 	
 	la	$t0, K4				# PS2 Keyboard Key2 
 	lw	$t1, 0($t0)			# get keymap 4
 	andi	$t2, $t1, RIGHT2_K		# check if '3' was pressed
-	beq	$t2, RIGHT2_K, UPDATE_BOX_R2	# if '3' was pressed than get key from buffer
+	beq	$t2, RIGHT2_K, UPDATE_BOX_R2	# 
+	
+	la	$t0, K4				# PS2 Keyboard Key2 
+	lw	$t1, 0($t0)			# get keymap 4
+	andi	$t2, $t1, UP2_K			# check if '5' was pressed
+	beq	$t2, UP2_K, UPDATE_BOX_U2	# 
+	
+	la	$t0, K4				# PS2 Keyboard Key2 
+	lw	$t1, 0($t0)			# get keymap 4
+	andi	$t2, $t1, DOWN2_K		# check if '2' was pressed
+	beq	$t2, DOWN2_K, UPDATE_BOX_D2	# 
 
 	la	$t0, K3				# PS2 Keyboard Key3 
 	lw	$t1, 0($t0)			# get keymap 3
@@ -606,6 +619,61 @@ UPDATE_BOX_L1:
 	nop	
 
 	j MAIN_SELECT
+	
+UPDATE_BOX_U2:
+
+	lw	$s5, 32($sp)		# X coordinate
+	lw	$s6, 36($sp)		# Y coordinate
+	
+	slti	$t8, $s6, 160
+	beq	$t8, 1, MAIN_SELECT
+	
+	la	$t1, S2_BACK_BUFF	# SRAM buffer address
+	li 	$t5, 50			# Ryu height (y)
+	li 	$t6, 58			# Ryu height (y)
+	jal CLEAN_PATH
+	nop
+	
+	la	$t1, S12_BUFFER		
+	la	$s7, S2_BACK_BUFF		
+	lw	$s5, 32($sp)		# X coordinate
+	lw	$s6, 36($sp)		# Y coordinate
+	addi	$s6, $s6, -33
+	sw	$s6, 36($sp)	
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 58			# Select width (x)
+	jal 	PRINT_SELECT		
+	nop	
+
+	j MAIN_SELECT
+
+	
+UPDATE_BOX_D2:
+
+	lw	$s5, 32($sp)		# X coordinate
+	lw	$s6, 36($sp)		# Y coordinate
+	
+	sgt	$t8, $s6, 170
+	beq	$t8, 1, MAIN_SELECT
+	
+	la	$t1, S2_BACK_BUFF	# SRAM buffer address
+	li 	$t5, 50			# Ryu height (y)
+	li 	$t6, 58			# Ryu height (y)
+	jal CLEAN_PATH
+	nop
+	
+	la	$t1, S12_BUFFER		
+	la	$s7, S2_BACK_BUFF		
+	lw	$s5, 32($sp)		# X coordinate
+	lw	$s6, 36($sp)		# Y coordinate
+	addi	$s6, $s6, 33
+	sw	$s6, 36($sp)		# X coordinate
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 58			# Select width (x)
+	jal 	PRINT_SELECT		
+	nop	
+
+	j MAIN_SELECT
 
 	
 UPDATE_BOX_R1:
@@ -628,6 +696,61 @@ UPDATE_BOX_R1:
 	addi	$s5, $s5, 33
 	sw	$s5, 24($sp)		# X coordinate
 	lw	$s6, 28($sp)		# Y coordinate
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 0			# Select width (x)
+	jal 	PRINT_SELECT		
+	nop	
+
+	j MAIN_SELECT
+	
+UPDATE_BOX_U1:
+
+	lw	$s5, 24($sp)		# X coordinate
+	lw	$s6, 28($sp)		# Y coordinate
+	
+	slti	$t8, $s6, 160
+	beq	$t8, 1, MAIN_SELECT
+	
+	la	$t1, S1_BACK_BUFF	# SRAM buffer address
+	li 	$t5, 50			# Ryu height (y)
+	li 	$t6, 58			# Ryu height (y)
+	jal CLEAN_PATH
+	nop
+	
+	la	$t1, S12_BUFFER		
+	la	$s7, S1_BACK_BUFF		
+	lw	$s5, 24($sp)		# X coordinate
+	lw	$s6, 28($sp)		# Y coordinate
+	addi	$s6, $s6, -33
+	sw	$s6, 28($sp)	
+	li 	$t5, 50			# Select height (y)
+	li 	$t6, 0			# Select width (x)
+	jal 	PRINT_SELECT		
+	nop	
+
+	j MAIN_SELECT
+
+	
+UPDATE_BOX_D1:
+
+	lw	$s5, 24($sp)		# X coordinate
+	lw	$s6, 28($sp)		# Y coordinate
+	
+	sgt	$t8, $s6, 170
+	beq	$t8, 1, MAIN_SELECT
+	
+	la	$t1, S1_BACK_BUFF	# SRAM buffer address
+	li 	$t5, 50			# Ryu height (y)
+	li 	$t6, 58			# Ryu height (y)
+	jal CLEAN_PATH
+	nop
+	
+	la	$t1, S12_BUFFER		
+	la	$s7, S1_BACK_BUFF		
+	lw	$s5, 24($sp)		# X coordinate
+	lw	$s6, 28($sp)		# Y coordinate
+	addi	$s6, $s6, 33
+	sw	$s6, 28($sp)		# X coordinate
 	li 	$t5, 50			# Select height (y)
 	li 	$t6, 0			# Select width (x)
 	jal 	PRINT_SELECT		
