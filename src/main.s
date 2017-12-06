@@ -40,11 +40,17 @@
 .eqv K4		0xFF10052C		# PS2 Keyboard KEY3
 
 ### KEYBOARD MAP ### 
-.eqv LEFT	0x1C000000		# 'a' LEFT
-.eqv LEFT_K	0x10000000		# 'a' KEY
+.eqv LEFT1	0x1C000000		# 'a' LEFT
+.eqv LEFT1_K	0x10000000		# 'a' LEFT KEY
+.eqv RIGHT1	0x23000000		# 'd' RIGHT
+.eqv RIGHT1_K	0x00000008		# 'd' RIGHT KEY
+
+.eqv LEFT2	0x69000000		# '1' LEFT
+.eqv LEFT2_K	0x00000200		# '1' LEFT KEY
+.eqv RIGHT2	0x7A000000		# '3' RIGHT
+.eqv RIGHT2_K	0x04000000		# '3' RIGHT KEY
+
 .eqv DOWN	0x1B000000		# 's' DOWN
-.eqv RIGHT	0x23000000		# 'd' RIGHT
-.eqv RIGHT_K	0x00000008		# 'd' KEY
 .eqv UP		0x1D000000		# 'w' UP
 .eqv L_PUNCH	0x34000000		# 'g' LIGHT PUNCH
 .eqv M_PUNCH	0x33000000		# 'h' MEDIUM PUNCH
@@ -67,7 +73,7 @@
 # (defasagem de setores logicos/fisicos * tamanho do setor)]
 # Olhe pelo WinHex o offset do seu cartao SD
 					
-.eqv USER_DATA    0x10012000		# SRAM address to load char from SD 
+.eqv USER_DATA     0x10012000		# SRAM address to load char from SD 
 .eqv CHAR1_BUFFER  0x1003B400		# SRAM address to keep the first char's buffer
 .eqv CHAR2_BUFFER  0x10064800		# SRAM address to keep the second char's buffer
 
@@ -309,9 +315,11 @@ UPDATE_BUFFER:
 					# in case the buffer is full
 
 CONTROL:
-	beq 	$a0, LEFT, 	MOVE_L	# test if 'a' was pressed
+	beq 	$a0, LEFT1, 	MOVE1_L	# test if 'a' was pressed
+	beq 	$a0, LEFT2, 	MOVE2_L	# test if '1' was pressed
 	beq 	$a0, DOWN, 	EXIT	# test if 's' was pressed
-	beq 	$a0, RIGHT, 	MOVE_R	# test if 'd' was pressed
+	beq 	$a0, RIGHT1, 	MOVE1_R	# test if 'd' was pressed
+	beq 	$a0, RIGHT2, 	MOVE2_R	# test if 'd' was pressed
 	beq 	$a0, UP, 	EXIT	# test if 'w' was pressed
 	beq 	$a0, L_PUNCH, 	EXIT	# test if 'g' was pressed
 	beq 	$a0, L_KICK, 	EXIT	# test if 'b' was pressed
@@ -321,13 +329,23 @@ CONTROL:
 MAIN:
 	la	$t0, K1				# PS2 Keyboard Key1 
 	lw	$t1, 0($t0)			# get keymap 1
-	andi	$t2, $t1, LEFT_K		# check if 'a' was pressed
-	beq	$t2, LEFT_K, UPDATE_BUFFER	# if 'a' was pressed than get key from buffer
+	andi	$t2, $t1, LEFT1_K		# check if 'a' was pressed
+	beq	$t2, LEFT1_K, UPDATE_BUFFER	# if 'a' was pressed than get key from buffer
 	
 	la	$t0, K2				# PS2 Keyboard Key2 
 	lw	$t1, 0($t0)			# get keymap 2
-	andi	$t2, $t1, RIGHT_K		# check if 'd' was pressed
-	beq	$t2, RIGHT_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
+	andi	$t2, $t1, RIGHT1_K		# check if 'd' was pressed
+	beq	$t2, RIGHT1_K, UPDATE_BUFFER	# if 'd' was pressed than get key from buffer
+	
+	la	$t0, K4				# PS2 Keyboard Key2 
+	lw	$t1, 0($t0)			# get keymap 4
+	andi	$t2, $t1, LEFT2_K		# check if '1' was pressed
+	beq	$t2, LEFT2_K, UPDATE_BUFFER	# if '1' was pressed than get key from buffer
+	
+	la	$t0, K4				# PS2 Keyboard Key2 
+	lw	$t1, 0($t0)			# get keymap 4
+	andi	$t2, $t1, RIGHT2_K		# check if '3' was pressed
+	beq	$t2, RIGHT2_K, UPDATE_BUFFER	# if '3' was pressed than get key from buffer
 		
 	la	$t1, CHAR1_BUFFER		# SRAM buffer address
 	lw	$s5, 0($sp)			# X coordinate
@@ -350,7 +368,7 @@ MAIN:
 	j MAIN
 	nop
 
-MOVE_R:
+MOVE1_R:
 	la	$t1, CHAR1_BUFFER		# SRAM buffer address
 	lw	$s5, 0($sp)			# X coordinate
 	lw	$s6, 4($sp)			# Y coordinate
@@ -367,7 +385,7 @@ MOVE_R:
 	j	MAIN
 	nop
 
-MOVE_L:
+MOVE1_L:
 	la	$t1, CHAR1_BUFFER		# SRAM buffer address
 	lw	$s5, 0($sp)			# X coordinate
 	lw	$s6, 4($sp)			# Y coordinate
@@ -377,6 +395,40 @@ MOVE_L:
 	lw	$t0, 0($sp)		# X coordinate
 	addi 	$t1, $t0, -5		# Sub 20 steps when Ryu move to left
 	sw	$t1, 0($sp)		# X updated
+
+	jal	PRINT_CHAR2
+	nop	
+	
+	j	MAIN
+	nop
+	
+MOVE2_R:
+	la	$t1, CHAR2_BUFFER		# SRAM buffer address
+	lw	$s5, 16($sp)			# X coordinate
+	lw	$s6, 20($sp)			# Y coordinate
+	jal	CLEAN_PATH
+	nop
+	
+	lw	$t0, 16($sp)		# X coordinate
+	addi 	$t1, $t0, 5		# Add 20 steps when Ryu move to right
+	sw	$t1, 16($sp)		# X updated
+
+	jal	PRINT_CHAR2
+	nop	
+	
+	j	MAIN
+	nop
+
+MOVE2_L:
+	la	$t1, CHAR2_BUFFER		# SRAM buffer address
+	lw	$s5, 16($sp)			# X coordinate
+	lw	$s6, 20($sp)			# Y coordinate
+	jal	CLEAN_PATH
+	nop
+	
+	lw	$t0, 16($sp)		# X coordinate
+	addi 	$t1, $t0, -5		# Sub 20 steps when Ryu move to left
+	sw	$t1, 16($sp)		# X updated
 
 	jal	PRINT_CHAR2
 	nop	
