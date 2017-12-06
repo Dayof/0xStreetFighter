@@ -1,0 +1,72 @@
+
+.data
+
+ABERTURA1:	.asciiz "abertura1.bin"
+ABERTURA2:	.asciiz "abertura2.bin"
+
+
+.text
+
+Abertura: #Parte que checa teclado, caso a tecla seja apertadado, a condinção é tomado.
+	move $t0, $zero
+	move $t1, $zero
+	addi $t1, $t1, 5
+	
+LoopAb: beq $t0, $t1, FORA
+# Abre o arquivo
+	la $a0, ABERTURA1
+	li $a1,0
+	li $a2,0
+	li $v0,13
+	syscall
+
+
+
+# Le o arquivos para a memoria VGA
+	move $a0,$v0
+	la $a1,0xFF000000
+	li $a2,76800
+	li $v0,14
+	syscall
+	
+
+#Fecha o arquivo
+	li $v0,16
+	syscall
+	
+	li $a0, 200
+	li $v0, 32
+	syscall 
+
+	
+# Abre o arquivo
+	la $a0,	ABERTURA2
+	li $a1,0
+	li $a2,0
+	li $v0,13
+	syscall
+
+
+
+# Le o arquivos para a memoria VGA
+	move $a0,$v0
+	la $a1,0xFF000000
+	li $a2,76800
+	li $v0,14
+	syscall
+	
+
+#Fecha o arquivo
+
+	li $v0,16
+	syscall
+	
+	li $a0, 200
+	li $v0, 32
+	syscall 	
+	
+	addi $t0, $t0, 1
+	
+	j LoopAb
+	
+FORA: j MenuMain
