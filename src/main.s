@@ -396,7 +396,7 @@ MOVE1_L:
 	addi 	$t1, $t0, -5		# Sub 20 steps when Ryu move to left
 	sw	$t1, 0($sp)		# X updated
 
-	jal	PRINT_CHAR2
+	jal	PRINT_CHAR1
 	nop	
 	
 	j	MAIN
