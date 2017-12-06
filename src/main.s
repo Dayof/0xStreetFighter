@@ -112,17 +112,30 @@
 
 ### CHARACTERS MAP ### 
 .eqv RYU_STAGE	  0x0045C000		# Ryu's stage sd address
-
 .eqv RYU	  0x0009CE00		# Ryu's char sd address
-.eqv RYU_CHAR_QTD 29400			# Ryu's bytes size (72D8)
 
 .eqv HONDA_STAGE  0x0045C000	
+.eqv HONDA	  0x0009CE00		# Honda's char sd address
+
 .eqv BLANKA_STAGE 0x0045C000	
+.eqv BLANKA	  0x0009CE00		# Blanka's char sd address
+
 .eqv GUILE_STAGE  0x0045C000	
+.eqv GUILE	  0x0009CE00		# Guile's char sd address
+
 .eqv KEN_STAGE    0x0045C000	
+.eqv KEN	  0x0009CE00		# Ken's char sd address
+
 .eqv CHUN_STAGE   0x0045C000	
-.eqv ZANG_STAGE   0x0045C000	
-.eqv DAL_STAGE    0x0045C000	
+.eqv CHUN	  0x0009CE00		# Chun-li's char sd address
+
+.eqv ZANG_STAGE   0x0045C000
+.eqv ZANG	  0x0009CE00		# Zangief's char sd address
+	
+.eqv DHAL_STAGE   0x0045C000
+.eqv DHAL	  0x0009CE00		# Dhalsim's char sd address	
+
+.eqv CHAR_QTD 	  29400			# Ryu's bytes size (72D8)
 
 .text
 
